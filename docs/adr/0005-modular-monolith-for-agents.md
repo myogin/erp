@@ -1,0 +1,3 @@
+# Business logic lives in domain modules, shared by UI, API and future AI agents
+
+The app is a modular monolith. All business logic, validation (Zod) and permission checks live in domain modules (e.g. accounting, payroll). Next.js Server Actions, API routes and future AI-agent tools are thin adapters over the same module functions, and none of them contain business logic. An AI agent will be treated as a User with its own Role and subject to the same audit log; data-changing agent actions require human approval. This keeps the planned agent from bypassing the rules in ADR-0003 or the access rules in ADR-0006.

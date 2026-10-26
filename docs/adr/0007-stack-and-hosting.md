@@ -1,0 +1,3 @@
+# Next.js + PostgreSQL/Drizzle on our own VPS
+
+We use Next.js as the full-stack framework, PostgreSQL with Drizzle as the database layer, Docker Compose with Caddy for deployment on our own VPS, and encrypted daily database backups copied off the VPS. We picked Drizzle over Prisma because it stays close to SQL, which makes explicit transactions, `numeric` columns and database constraints easy to control. Money is stored as `numeric(18,2)` and handled with a decimal library, never floats. The business time zone is `Asia/Makassar` (WITA): dates such as Accounting Periods and Payroll Run months are computed in that zone.
