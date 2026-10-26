@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=.env src/db/migrate-cli.ts",
     "typecheck": "next typegen && tsc --noEmit",
-    "auth:generate": "npx -y auth@1.7.13 generate --config src/auth-cli.config.ts --output src/db/auth-schema.ts --yes"
+    "auth:generate": "npx -y auth@1.7.13 generate --config src/auth-cli.config.ts --output src/db/auth-schema.ts --yes",
+    "check:docker": "docker build --target deps -t erp-lockcheck . && docker image rm erp-lockcheck"
   },
   "dependencies": {
     "better-auth": "^1.7.13",
