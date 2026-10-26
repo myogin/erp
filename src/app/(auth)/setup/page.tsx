@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { getDb } from "@/db/client";
 import { isSetupComplete } from "@/modules/access";
@@ -16,6 +17,7 @@ export default function SetupPage() {
 }
 
 async function SetupGate() {
+  await connection(); // request time only; there's no database during `next build`
   if (await isSetupComplete(getDb())) redirect("/masuk");
   if (!process.env.BOOTSTRAP_OWNER_EMAIL) {
     return <p className="text-sm">Isi variabel <code>BOOTSTRAP_OWNER_EMAIL</code> di server, lalu muat ulang halaman ini.</p>;

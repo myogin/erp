@@ -16,4 +16,4 @@ Single-context: one `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agen
 
 ## Dependencies
 
-After adding or removing a dependency, regenerate the lockfile from scratch (`rm -rf node_modules package-lock.json && npm install`) and run `npm run check:docker`. An incremental `npm install` on macOS can drop Linux-only optional packages (e.g. `@emnapi/*`), which makes `npm ci` fail in the Easypanel build.
+After adding or removing a dependency, regenerate the lockfile from scratch (`rm -rf node_modules package-lock.json && npm install`) and run `npm run check:docker` (a full image build, as Easypanel does it, with no database configured). An incremental `npm install` on macOS can drop Linux-only optional packages (e.g. `@emnapi/*`), which makes `npm ci` fail in the Easypanel build.

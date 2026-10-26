@@ -30,7 +30,10 @@ async function sessionHeaders(): Promise<Headers> {
 }
 
 const loadCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const session = await getAuth().api.getSession({ headers: await sessionHeaders() });
+  // Read the request first: during `next build` that's where prerendering stops,
+  // before anything touches the database (which isn't configured at build time).
+  const requestHeaders = await sessionHeaders();
+  const session = await getAuth().api.getSession({ headers: requestHeaders });
   if (!session) return null;
   const grants = await getGrants(getDb(), session.user.id);
   return {
