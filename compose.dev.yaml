@@ -1,0 +1,16 @@
+# Local PostgreSQL for `npm run dev` and `npm test`.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: erp
+      POSTGRES_DB: erp
+      TZ: Asia/Makassar
+    ports:
+      - "5432:5432"
+    volumes:
+      - dev-db:/var/lib/postgresql/data
+
+volumes:
+  dev-db:
