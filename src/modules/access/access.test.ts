@@ -10,10 +10,12 @@ import {
   bootstrapOwner,
   createCompany,
   createUser,
+  findAccessibleCompany,
   getGrants,
   grantRole,
   listAccessibleCompanies,
   listAuditLog,
+  listUsers,
   requiresTwoFactor,
   resetPassword,
   revokeRole,
@@ -78,6 +80,22 @@ describe("users", () => {
   });
 });
 
+describe("user list", () => {
+  it("searches, sorts and pages on the server", async () => {
+    const owner = await setupOwner();
+    for (const n of ["Budi", "Citra", "Dewi", "Eko"]) await createUser(db, owner, { name: n, email: `${n.toLowerCase()}@example.com` });
+
+    const firstPage = await listUsers(db, owner, { sort: "-name", page: 1, pageSize: 2 });
+    expect(firstPage.total).toBe(5);
+    expect(firstPage.rows.map((u) => u.name)).toEqual(["Owner", "Eko"]);
+    expect((await listUsers(db, owner, { sort: "-name", page: 3, pageSize: 2 })).rows.map((u) => u.name)).toEqual(["Budi"]);
+
+    const search = await listUsers(db, owner, { search: "CITRA@" });
+    expect(search.total).toBe(1);
+    expect(search.rows[0].name).toBe("Citra");
+  });
+});
+
 describe("company access", () => {
   it("limits per-Company Roles to their Company, while Owner and Admin see all", async () => {
     const owner = await setupOwner();
@@ -91,6 +109,10 @@ describe("company access", () => {
     expect((await listAccessibleCompanies(db, finA)).map((c) => c.code)).toEqual(["CVA"]);
     expect((await listAccessibleCompanies(db, admin)).map((c) => c.code)).toEqual(["CVA", "CVB"]);
 
+    expect((await findAccessibleCompany(db, finA, "cva"))?.id).toBe(cva.id);
+    expect(await findAccessibleCompany(db, finA, "cvb")).toBeNull();
+    expect(await findAccessibleCompany(db, finA, "nope")).toBeNull();
+
     // A Company created later is covered by the global Roles automatically.
     const cvc = await createCompany(db, admin, { code: "CVC", name: "CV C" });
     await expect(assertCompanyAccess(db, admin, cvc.id)).resolves.toBeUndefined();
@@ -101,6 +123,11 @@ describe("company access", () => {
     await createCompany(db, owner, { code: "CVA", name: "CV A" });
     await expect(createCompany(db, owner, { code: "CVA", name: "Lain" })).rejects.toThrow(AccessRuleError);
     await expect(createCompany(db, owner, { code: "CV A!", name: "Lain" })).rejects.toThrow();
+  });
+
+  it("rejects codes that would shadow an app route in the URL", async () => {
+    const owner = await setupOwner();
+    await expect(createCompany(db, owner, { code: "pengaturan", name: "X" })).rejects.toThrow(/dipakai sistem/);
   });
 });
 

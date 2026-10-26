@@ -1,11 +1,24 @@
-import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
+import { AppSidebar } from "@/components/shell/app-sidebar";
+import { CompanySwitcher } from "@/components/shell/company-switcher";
+import { ShellSkeleton } from "@/components/shell/shell-skeleton";
+import { UserMenu } from "@/components/shell/user-menu";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { getDb } from "@/db/client";
 import { requireUser } from "@/lib/session";
-import { SignOutButton } from "./sign-out-button";
+import { listAccessibleCompanies } from "@/modules/access";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <Suspense fallback={<p className="p-6 text-sm">Memuat…</p>}>
+    <Suspense
+      fallback={<p className="p-6 text-sm text-muted-foreground">Memuat…</p>}
+    >
       <Shell>{children}</Shell>
     </Suspense>
   );
@@ -13,26 +26,30 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
 async function Shell({ children }: { children: ReactNode }) {
   const user = await requireUser();
+  const companies = (await listAccessibleCompanies(getDb(), user)).map((c) => ({
+    id: c.id,
+    code: c.code,
+    name: c.name,
+  }));
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="flex flex-wrap items-center gap-4 border-b border-zinc-200 px-6 py-3 text-sm dark:border-zinc-800">
-        <Link href="/" className="font-semibold">
-          ERP
-        </Link>
-        {user.isAdministrator && (
-          <nav className="flex gap-4">
-            <Link href="/pengaturan/perusahaan">Perusahaan</Link>
-            <Link href="/pengaturan/pengguna">Pengguna</Link>
-            <Link href="/pengaturan/audit">Audit log</Link>
-          </nav>
-        )}
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-zinc-600 dark:text-zinc-400">{user.name}</span>
-          <Link href="/ganti-password">Ganti kata sandi</Link>
-          <SignOutButton />
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 p-6">{children}</main>
-    </div>
+    <TooltipProvider>
+      <SidebarProvider>
+        <AppSidebar grants={user.grants} companies={companies} />
+        <SidebarInset>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <CompanySwitcher companies={companies} />
+            <div className="ml-auto">
+              <UserMenu name={user.name} email={user.email} />
+            </div>
+          </header>
+          <main className="flex flex-1 flex-col gap-6 p-6">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

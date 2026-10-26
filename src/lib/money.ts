@@ -24,14 +24,25 @@ export function toMoneyString(value: Money): string {
   return value.toFixed(MONEY_SCALE);
 }
 
-const rupiah = new Intl.NumberFormat("id-ID", {
+const rupiahWhole = new Intl.NumberFormat("id-ID", {
+  style: "currency",
+  currency: "IDR",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+const rupiahCents = new Intl.NumberFormat("id-ID", {
   style: "currency",
   currency: "IDR",
   minimumFractionDigits: MONEY_SCALE,
   maximumFractionDigits: MONEY_SCALE,
 });
 
+/**
+ * `Rp 1.500.000`, or `Rp 1.500.000,50` when there are cents: the screen must
+ * never silently round an amount (docs/ui.md).
+ */
 export function formatRupiah(value: Money): string {
+  const formatter = value.isInteger() ? rupiahWhole : rupiahCents;
   // Intl formats decimal strings exactly; Number() would lose precision on large amounts.
-  return rupiah.format(toMoneyString(value) as `${number}`);
+  return formatter.format(toMoneyString(value) as `${number}`);
 }

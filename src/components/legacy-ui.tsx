@@ -1,3 +1,4 @@
+// Pre-shadcn form helpers. Pages still using these move to src/components/ui (docs/ui.md) one by one.
 import type { ComponentProps, ReactNode } from "react";
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {

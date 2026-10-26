@@ -1,6 +1,9 @@
 export const ROLES = ["owner", "admin", "finance", "hr", "management"] as const;
 export type Role = (typeof ROLES)[number];
 
+/** One Role held by a User; `companyId` is null for the global Roles. */
+export type Grant = { id: string; role: Role; companyId: string | null };
+
 /** Owner and Admin apply to every Company, including ones created later (ADR-0006). */
 export const GLOBAL_ROLES = ["owner", "admin"] as const satisfies readonly Role[];
 export const COMPANY_ROLES = ["finance", "hr", "management"] as const satisfies readonly Role[];

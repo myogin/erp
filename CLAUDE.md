@@ -14,6 +14,10 @@ Default five-role vocabulary (needs-triage, needs-info, ready-for-agent, ready-f
 
 Single-context: one `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+## UI
+
+Follow `docs/ui.md` for layout, page patterns and formats.
+
 ## Dependencies
 
 After adding or removing a dependency, regenerate the lockfile from scratch (`rm -rf node_modules package-lock.json && npm install`) and run `npm run check:docker` (a full image build, as Easypanel does it, with no database configured). An incremental `npm install` on macOS can drop Linux-only optional packages (e.g. `@emnapi/*`), which makes `npm ci` fail in the Easypanel build.

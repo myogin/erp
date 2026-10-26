@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui";
+import { Card } from "@/components/legacy-ui";
 import { getDb } from "@/db/client";
 import { requireAdministrator } from "@/lib/session";
 import { listAccessibleCompanies } from "@/modules/access";

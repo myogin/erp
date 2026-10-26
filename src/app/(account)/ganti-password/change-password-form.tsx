@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { Button, Field, FormMessage, Input } from "@/components/ui";
+import { Button, Field, FormMessage, Input } from "@/components/legacy-ui";
 import { changePassword } from "./actions";
 
 export function ChangePasswordForm() {

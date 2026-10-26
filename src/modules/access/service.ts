@@ -1,17 +1,16 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
-import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db/client";
 import { account, session, user } from "@/db/auth-schema";
 import { AccessDeniedError, AccessRuleError } from "./errors";
-import { COMPANY_ROLES, GLOBAL_ROLES, isGlobalRole, isOwnerManagedRole, ROLES, TWO_FACTOR_ROLES, type Role } from "./roles";
+import { COMPANY_ROLES, GLOBAL_ROLES, isGlobalRole, isOwnerManagedRole, ROLES, TWO_FACTOR_ROLES, type Grant, type Role } from "./roles";
 import { auditLog, company, roleGrant } from "./schema";
 
 /** The User performing an action, as resolved by the caller (UI, API or agent). */
 export type Actor = { userId: string };
 
-export type Grant = { id: string; role: Role; companyId: string | null };
 export type Company = typeof company.$inferSelect;
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
@@ -53,6 +52,13 @@ async function requireAdministrator(db: Executor, actor: Actor): Promise<Grant[]
 /** Throws unless the actor holds any Role covering the Company. */
 export async function assertCompanyAccess(db: Executor, actor: Actor, companyId: string): Promise<void> {
   if (!canAccessCompany(await getGrants(db, actor.userId), companyId)) throw new AccessDeniedError();
+}
+
+/** The Company with this code (from the URL, any case), or null if it doesn't exist or the actor can't access it. */
+export async function findAccessibleCompany(db: Executor, actor: Actor, code: string): Promise<Company | null> {
+  const [found] = await db.select().from(company).where(eq(company.code, code.toUpperCase()));
+  if (!found || !canAccessCompany(await getGrants(db, actor.userId), found.id)) return null;
+  return found;
 }
 
 export async function listAccessibleCompanies(db: Executor, actor: Actor): Promise<Company[]> {
@@ -239,8 +245,24 @@ export async function recordTwoFactorEnabled(db: Db, actor: Actor): Promise<void
   await audit(db, { actorUserId: actor.userId, action: "user.two_factor_enabled", targetType: "user", targetId: actor.userId });
 }
 
-export async function listUsers(db: Db, actor: Actor) {
+export type UserListQuery = {
+  search?: string;
+  /** Column to sort by; prefix with "-" for descending. */
+  sort?: "name" | "-name" | "email" | "-email";
+  page?: number;
+  pageSize?: number;
+};
+
+export async function listUsers(db: Db, actor: Actor, query: UserListQuery = {}) {
   await requireAdministrator(db, actor);
+  const pageSize = Math.min(Math.max(query.pageSize ?? 20, 1), 100);
+  const page = Math.max(query.page ?? 1, 1);
+  const term = query.search?.trim();
+  const where = term ? or(ilike(user.name, `%${term}%`), ilike(user.email, `%${term}%`)) : undefined;
+  const sort = query.sort ?? "name";
+  const column = sort.endsWith("email") ? user.email : user.name;
+
+  const [{ total }] = await db.select({ total: count() }).from(user).where(where);
   const users = await db
     .select({
       id: user.id,
@@ -250,23 +272,49 @@ export async function listUsers(db: Db, actor: Actor) {
       mustChangePassword: user.mustChangePassword,
     })
     .from(user)
-    .orderBy(asc(user.name));
-  const grants = await db
-    .select({ id: roleGrant.id, userId: roleGrant.userId, role: roleGrant.role, companyId: roleGrant.companyId, companyCode: company.code })
-    .from(roleGrant)
-    .leftJoin(company, eq(company.id, roleGrant.companyId));
-  return users.map((u) => ({ ...u, grants: grants.filter((g) => g.userId === u.id) }));
+    .where(where)
+    .orderBy(sort.startsWith("-") ? desc(column) : asc(column), asc(user.id))
+    .limit(pageSize)
+    .offset((page - 1) * pageSize);
+
+  const ids = users.map((u) => u.id);
+  const grants = ids.length
+    ? await db
+        .select({ id: roleGrant.id, userId: roleGrant.userId, role: roleGrant.role, companyId: roleGrant.companyId, companyCode: company.code })
+        .from(roleGrant)
+        .leftJoin(company, eq(company.id, roleGrant.companyId))
+        .where(inArray(roleGrant.userId, ids))
+    : [];
+  return {
+    rows: users.map((u) => ({ ...u, grants: grants.filter((g) => g.userId === u.id) })),
+    total,
+    page,
+    pageSize,
+  };
+}
+
+/** Name and id of every User, for pickers such as "grant a Role to …". */
+export async function listUserOptions(db: Db, actor: Actor) {
+  await requireAdministrator(db, actor);
+  return db.select({ id: user.id, name: user.name, email: user.email }).from(user).orderBy(asc(user.name));
 }
 
 // ---------------------------------------------------------------------------
 // Companies
+
+/**
+ * Company codes become the first URL segment (`/cva/...`, ADR-0008), so they
+ * must not shadow a top-level route. Keep in sync with the folders in src/app.
+ */
+export const RESERVED_COMPANY_CODES = ["API", "MASUK", "SETUP", "PENGATURAN", "KEAMANAN", "PORTAL", "LAPORAN"];
 
 const companyInput = z.object({
   code: z
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z0-9]{2,10}$/, "Kode 2–10 huruf besar/angka, mis. CVA."),
+    .regex(/^[A-Z0-9]{2,10}$/, "Kode 2–10 huruf besar/angka, mis. CVA.")
+    .refine((code) => !RESERVED_COMPANY_CODES.includes(code), "Kode ini dipakai sistem; pilih kode lain."),
   name: nameSchema,
   npwp: z
     .string()

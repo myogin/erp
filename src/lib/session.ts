@@ -1,9 +1,9 @@
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { getDb } from "@/db/client";
 import { getAuth } from "@/lib/auth";
-import { getGrants, isAdministrator, requiresTwoFactor, type Actor, type Grant } from "@/modules/access";
+import { findAccessibleCompany, getGrants, isAdministrator, requiresTwoFactor, type Actor, type Company, type Grant } from "@/modules/access";
 
 export type CurrentUser = Actor & {
   name: string;
@@ -67,4 +67,15 @@ export async function requireAdministrator(): Promise<CurrentUser> {
   const user = await requireUser();
   if (!user.isAdministrator) redirect("/");
   return user;
+}
+
+/**
+ * The Company named by the URL's first segment (ADR-0008). Unknown and
+ * inaccessible Companies both give 404, so the URL doesn't reveal which exist.
+ */
+export async function requireCompany(code: string): Promise<{ user: CurrentUser; company: Company }> {
+  const user = await requireUser();
+  const company = await findAccessibleCompany(getDb(), user, code);
+  if (!company) notFound();
+  return { user, company };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button, Field, FormMessage, Input } from "@/components/ui";
+import { Button, Field, FormMessage, Input } from "@/components/legacy-ui";
 import { createCompanyAction } from "../actions";
 
 export function CreateCompanyForm() {

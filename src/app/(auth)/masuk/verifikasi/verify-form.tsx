@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input } from "@/components/legacy-ui";
 import { authClient } from "@/lib/auth-client";
 
 export function VerifyForm() {
