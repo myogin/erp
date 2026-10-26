@@ -30,3 +30,17 @@ const displayDate = new Intl.DateTimeFormat("id-ID", {
 export function formatDate(instant: Date): string {
   return displayDate.format(instant);
 }
+
+const displayDateTime = new Intl.DateTimeFormat("id-ID", {
+  timeZone: BUSINESS_TIME_ZONE,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+/** `dd/MM/yyyy HH.mm` in WITA, for the UI. */
+export function formatDateTime(instant: Date): string {
+  return displayDateTime.format(instant);
+}

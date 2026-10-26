@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, serial } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { useTestDb } from "../../test/db";
+import { connectTestDb } from "../../test/db";
 import { money } from "@/lib/money";
 import { moneyColumn } from "./columns";
 
@@ -11,7 +11,7 @@ const amounts = pgTable("money_column_test", {
 });
 
 describe("moneyColumn", () => {
-  const db = useTestDb();
+  const db = connectTestDb();
 
   it("stores and reads amounts exactly as numeric(18,2)", async () => {
     await db.execute(sql`create temp table money_column_test (id serial primary key, amount numeric(18, 2) not null)`);
@@ -28,7 +28,7 @@ describe("moneyColumn", () => {
 });
 
 describe("database session", () => {
-  const db = useTestDb();
+  const db = connectTestDb();
 
   it("uses the business time zone", async () => {
     const { rows } = await db.execute<{ TimeZone: string }>(sql`show timezone`);

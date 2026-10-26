@@ -13,15 +13,23 @@ A person who can log in to the system. A User is not necessarily an Employee.
 _Avoid_: Account, member
 
 **Role**:
-A named set of permissions granted to a User for one Company: `owner`, `admin`, `finance`, `hr`, `management`.
+A named set of permissions granted to a User: `owner`, `admin`, `finance`, `hr`, `management`. Owner and Admin are global; the others are granted for one Company.
 _Avoid_: Group, level
 
 **Owner** [Pemilik]:
-Role with full access to every Company, including salary data, and final approval authority.
+Global Role with full access to every Company, including salary data, and final approval authority. The only Role that can grant Owner, Admin or HR.
 
 **Admin**:
-Role that manages Users, Roles and system settings. Does not see salary data unless also granted `hr`.
+Global Role that manages Companies, Users and the Finance and Management Roles. Cannot see salary data, and cannot grant itself or anyone else a Role that can.
 _Avoid_: Superuser
+
+**Temporary Password** [Kata Sandi Sementara]:
+A password generated when an Owner or Admin creates a User or resets their password, shown once, and replaced by the User at their next login.
+_Avoid_: Default password, initial password
+
+**Audit Log**:
+The append-only record of sensitive actions: who did what, to which Company, and when.
+_Avoid_: History, activity log
 
 **Management** [Manajemen]:
 Role that reads reports and dashboards but does not enter transactions.

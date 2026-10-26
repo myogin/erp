@@ -31,9 +31,17 @@ One-time setup:
 2. **App service** (e.g. `erp`):
    - Source: GitHub `myogin/erp`, branch `main`, build path `/`.
    - Build: **Dockerfile** (`Dockerfile`).
-   - Environment: `DATABASE_URL=<internal connection URL from step 1>`.
+   - Environment:
+     ```
+     DATABASE_URL=<internal connection URL from step 1>
+     BETTER_AUTH_SECRET=<output of: openssl rand -base64 32>
+     BETTER_AUTH_URL=https://<your domain>
+     BOOTSTRAP_OWNER_EMAIL=<email of the first Owner>
+     ```
    - Domains: your domain → port `3000`, HTTPS on.
 3. **Backups**: add Google Drive under Settings → Server → Storage Providers, then on the Postgres service add a daily backup (e.g. `0 2 * * *`) to a dedicated path such as `/erp-backups/erp-db`, with a retention count. Run one backup now and test a restore into a scratch database before relying on it.
+
+First run: open `https://<domain>/setup` and create the Owner account with the `BOOTSTRAP_OWNER_EMAIL` address. You'll be asked to set up 2FA with an authenticator app; keep the backup codes somewhere safe. `/setup` stops working once any user exists. Then create the Companies and Users under Pengaturan.
 
 Deploy or update: push to `main`, then **Deploy** in Easypanel (or enable auto-deploy). Pending migrations are applied when the new container starts; if one fails, the container won't start, so check its logs. Check `https://<domain>/api/health`.
 
