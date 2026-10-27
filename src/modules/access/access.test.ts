@@ -15,6 +15,7 @@ import {
   grantRole,
   listAccessibleCompanies,
   listAuditLog,
+  listCompanies,
   listUsers,
   requiresTwoFactor,
   resetPassword,
@@ -131,6 +132,18 @@ describe("company access", () => {
   });
 });
 
+describe("company list", () => {
+  it("searches and sorts on the server", async () => {
+    const owner = await setupOwner();
+    await createCompany(db, owner, { code: "CVB", name: "Beta Jaya", npwp: "01.234" });
+    await createCompany(db, owner, { code: "CVA", name: "Alpha Makmur" });
+
+    expect((await listCompanies(db, owner)).rows.map((c) => c.code)).toEqual(["CVA", "CVB"]);
+    expect((await listCompanies(db, owner, { sort: "-name" })).rows.map((c) => c.code)).toEqual(["CVB", "CVA"]);
+    expect((await listCompanies(db, owner, { search: "01.2" })).rows.map((c) => c.code)).toEqual(["CVB"]);
+  });
+});
+
 describe("role management", () => {
   it("requires a Company for per-Company Roles and none for global Roles", async () => {
     const owner = await setupOwner();
@@ -194,7 +207,7 @@ describe("audit log", () => {
     const fin = await userWith(owner, "fin@example.com", [{ role: "finance", companyId: cva.id }]);
     await resetPassword(db, owner, fin.userId);
 
-    const entries = await listAuditLog(db, owner);
+    const { rows: entries } = await listAuditLog(db, owner);
     expect(entries.map((e) => e.action)).toEqual([
       "user.password_reset",
       "role.grant",
@@ -205,6 +218,19 @@ describe("audit log", () => {
     const grant = entries.find((e) => e.action === "role.grant")!;
     expect(grant).toMatchObject({ actorName: "Owner", companyCode: "CVA", details: { role: "finance" } });
     expect(grant.at).toBeInstanceOf(Date);
+  });
+
+  it("pages newest first and searches action, actor and Company code", async () => {
+    const owner = await setupOwner();
+    await createCompany(db, owner, { code: "CVA", name: "CV A" });
+    await createCompany(db, owner, { code: "CVB", name: "CV B" });
+
+    const page1 = await listAuditLog(db, owner, { pageSize: 2 });
+    expect(page1.total).toBe(3);
+    expect(page1.rows.map((e) => e.companyCode)).toEqual(["CVB", "CVA"]);
+    expect((await listAuditLog(db, owner, { search: "cvb" })).rows.map((e) => e.action)).toEqual(["company.create"]);
+    expect((await listAuditLog(db, owner, { search: "setup" })).total).toBe(1);
+    expect((await listAuditLog(db, owner, { search: "dibuat", matchingActions: ["company.create"] })).total).toBe(2);
   });
 
   it("cannot be edited or deleted", async () => {

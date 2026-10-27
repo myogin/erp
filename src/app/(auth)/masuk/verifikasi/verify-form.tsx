@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, Field, Input } from "@/components/legacy-ui";
+import { FormError } from "@/components/form-error";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
 export function VerifyForm() {
@@ -28,17 +31,27 @@ export function VerifyForm() {
   }
 
   return (
-    <form action={submit} className="space-y-3">
-      <Field label={useBackupCode ? "Kode cadangan" : "Kode dari aplikasi authenticator"}>
-        <Input name="code" autoComplete="one-time-code" inputMode={useBackupCode ? "text" : "numeric"} required autoFocus />
-      </Field>
-      {error && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{error}</p>}
-      <Button type="submit" disabled={pending} className="w-full">
-        Verifikasi
-      </Button>
-      <button type="button" className="text-sm underline" onClick={() => setUseBackupCode(!useBackupCode)}>
-        {useBackupCode ? "Pakai kode authenticator" : "Pakai kode cadangan"}
-      </button>
+    <form action={submit}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="code">{useBackupCode ? "Kode cadangan" : "Kode dari aplikasi authenticator"}</FieldLabel>
+          <Input
+            id="code"
+            name="code"
+            autoComplete="one-time-code"
+            inputMode={useBackupCode ? "text" : "numeric"}
+            required
+            autoFocus
+          />
+        </Field>
+        <FormError message={error} />
+        <Button type="submit" disabled={pending} className="w-full">
+          Verifikasi
+        </Button>
+        <Button type="button" variant="link" className="h-auto p-0" onClick={() => setUseBackupCode(!useBackupCode)}>
+          {useBackupCode ? "Pakai kode authenticator" : "Ponsel hilang? Pakai kode cadangan"}
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

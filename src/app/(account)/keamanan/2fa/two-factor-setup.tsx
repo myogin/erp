@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useState } from "react";
-import { Button, Field, Input } from "@/components/legacy-ui";
+import { FormError } from "@/components/form-error";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { confirmTwoFactorEnabled } from "./actions";
 
@@ -48,44 +51,52 @@ export function TwoFactorSetup() {
 
   if (!enrollment) {
     return (
-      <form action={start} className="space-y-3">
-        <Field label="Konfirmasi kata sandi">
-          <Input name="password" type="password" autoComplete="current-password" required />
-        </Field>
-        {error && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{error}</p>}
-        <Button type="submit" disabled={pending} className="w-full">
-          Mulai aktivasi
-        </Button>
+      <form action={start}>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="password">Konfirmasi kata sandi</FieldLabel>
+            <Input id="password" name="password" type="password" autoComplete="current-password" required />
+          </Field>
+          <FormError message={error} />
+          <Button type="submit" disabled={pending} className="w-full">
+            Mulai aktivasi
+          </Button>
+        </FieldGroup>
       </form>
     );
   }
 
   return (
-    <form action={verify} className="space-y-4">
-      <ol className="list-decimal space-y-3 pl-5 text-sm">
-        <li>
-          Pindai QR ini dengan Google Authenticator, Authy, atau sejenisnya.
-          {/* eslint-disable-next-line @next/next/no-img-element -- data URL generated locally */}
-          <img src={enrollment.qr} alt="QR code 2FA" width={200} height={200} className="mt-2 bg-white p-2" />
-          <span className="block text-xs">Atau masukkan kode: <code className="select-all">{enrollment.secret}</code></span>
-        </li>
-        <li>
-          Simpan kode cadangan ini di tempat aman. Tiap kode hanya bisa dipakai sekali jika ponsel hilang.
-          <ul className="mt-2 grid grid-cols-2 gap-1 font-mono">
-            {enrollment.backupCodes.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-        </li>
-        <li>Masukkan kode 6 digit dari aplikasi.</li>
-      </ol>
-      <Field label="Kode">
-        <Input name="code" autoComplete="one-time-code" inputMode="numeric" required />
-      </Field>
-      {error && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{error}</p>}
-      <Button type="submit" disabled={pending} className="w-full">
-        Aktifkan 2FA
-      </Button>
+    <form action={verify}>
+      <FieldGroup>
+        <ol className="list-decimal space-y-4 pl-5 text-sm">
+          <li>
+            Pindai QR ini dengan Google Authenticator, Authy, atau sejenisnya.
+            {/* eslint-disable-next-line @next/next/no-img-element -- data URL generated locally */}
+            <img src={enrollment.qr} alt="QR code 2FA" width={180} height={180} className="mt-2 rounded-md border bg-white p-2" />
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Atau masukkan kode: <code className="select-all">{enrollment.secret}</code>
+            </span>
+          </li>
+          <li>
+            Simpan kode cadangan ini di tempat aman. Tiap kode hanya bisa dipakai sekali jika ponsel hilang.
+            <ul className="mt-2 grid grid-cols-2 gap-1 rounded-md bg-muted p-2 font-mono text-xs">
+              {enrollment.backupCodes.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          </li>
+          <li>Masukkan kode 6 digit dari aplikasi.</li>
+        </ol>
+        <Field>
+          <FieldLabel htmlFor="code">Kode</FieldLabel>
+          <Input id="code" name="code" autoComplete="one-time-code" inputMode="numeric" required />
+        </Field>
+        <FormError message={error} />
+        <Button type="submit" disabled={pending} className="w-full">
+          Aktifkan 2FA
+        </Button>
+      </FieldGroup>
     </form>
   );
 }

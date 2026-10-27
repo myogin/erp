@@ -1,36 +1,25 @@
-import { Card } from "@/components/legacy-ui";
 import { getDb } from "@/db/client";
+import { listParams } from "@/lib/list-params";
 import { requireAdministrator } from "@/lib/session";
-import { listAccessibleCompanies } from "@/modules/access";
-import { CreateCompanyForm } from "./create-company-form";
+import { listCompanies } from "@/modules/access";
+import { CompaniesTable } from "./companies-table";
+import { CreateCompanyDialog } from "./create-company-dialog";
 
-export default async function CompaniesPage() {
+const SORTS = ["code", "-code", "name", "-name"] as const;
+
+export default async function CompaniesPage({ searchParams }: PageProps<"/pengaturan/perusahaan">) {
   const actor = await requireAdministrator();
-  const companies = await listAccessibleCompanies(getDb(), actor);
+  const list = await listCompanies(getDb(), actor, listParams(await searchParams, SORTS));
   return (
     <>
-      <h1 className="text-xl font-semibold">Perusahaan</h1>
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-zinc-200 dark:border-zinc-800">
-            <th className="py-2">Kode</th>
-            <th>Nama</th>
-            <th>NPWP</th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map((c) => (
-            <tr key={c.id} className="border-b border-zinc-100 dark:border-zinc-900">
-              <td className="py-2 font-mono">{c.code}</td>
-              <td>{c.name}</td>
-              <td>{c.npwp ?? "–"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <Card title="Tambah perusahaan">
-        <CreateCompanyForm />
-      </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Perusahaan</h1>
+          <p className="text-sm text-muted-foreground">CV yang dikelola di ERP. Kode dipakai di alamat halaman dan nomor dokumen.</p>
+        </div>
+        <CreateCompanyDialog />
+      </div>
+      <CompaniesTable rows={list.rows} total={list.total} page={list.page} pageSize={list.pageSize} />
     </>
   );
 }

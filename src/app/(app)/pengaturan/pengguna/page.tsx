@@ -1,28 +1,17 @@
 import { getDb } from "@/db/client";
 import { requireAdministrator } from "@/lib/session";
-import { listAccessibleCompanies, listUsers, type UserListQuery } from "@/modules/access";
+import { listParams } from "@/lib/list-params";
+import { listAccessibleCompanies, listUsers } from "@/modules/access";
 import { CreateUserDialog } from "./create-user-dialog";
 import { UsersTable } from "./users-table";
 
 const SORTS = ["name", "-name", "email", "-email"] as const;
-const PAGE_SIZE = 20;
-
-export function parseUserQuery(params: Record<string, string | string[] | undefined>): UserListQuery {
-  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-  const sort = one(params.sort);
-  return {
-    search: one(params.q),
-    sort: SORTS.find((s) => s === sort),
-    page: Number(one(params.page)) || 1,
-    pageSize: PAGE_SIZE,
-  };
-}
 
 export default async function UsersPage({ searchParams }: PageProps<"/pengaturan/pengguna">) {
   const actor = await requireAdministrator();
   const db = getDb();
   const [list, companies] = await Promise.all([
-    listUsers(db, actor, parseUserQuery(await searchParams)),
+    listUsers(db, actor, listParams(await searchParams, SORTS)),
     listAccessibleCompanies(db, actor),
   ]);
 

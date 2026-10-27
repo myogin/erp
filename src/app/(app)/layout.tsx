@@ -16,9 +16,7 @@ import { listAccessibleCompanies } from "@/modules/access";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <Suspense
-      fallback={<p className="p-6 text-sm text-muted-foreground">Memuat…</p>}
-    >
+    <Suspense fallback={<ShellSkeleton />}>
       <Shell>{children}</Shell>
     </Suspense>
   );

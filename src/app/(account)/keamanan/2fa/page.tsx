@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { AuthCard } from "@/components/auth-card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireSignedIn } from "@/lib/session";
 import { requiresTwoFactor } from "@/modules/access";
 import { TwoFactorSetup } from "./two-factor-setup";
 
 export default function TwoFactorPage() {
   return (
-    <>
-      <h1 className="text-xl font-semibold">Verifikasi 2 langkah (2FA)</h1>
-      <Suspense fallback={<p>Memuat…</p>}>
-        <TwoFactorStatus />
-      </Suspense>
-    </>
+    <Suspense fallback={<Skeleton className="h-72 w-full" />}>
+      <TwoFactorStatus />
+    </Suspense>
   );
 }
 
@@ -19,19 +19,23 @@ async function TwoFactorStatus() {
   const user = await requireSignedIn();
   if (user.twoFactorEnabled) {
     return (
-      <p className="text-sm">
-        2FA sudah aktif. <Link href="/" className="underline">Kembali ke beranda</Link>
-      </p>
+      <AuthCard title="Verifikasi 2 langkah" description="2FA sudah aktif di akun Anda.">
+        <Button asChild className="w-full">
+          <Link href="/">Kembali ke beranda</Link>
+        </Button>
+      </AuthCard>
     );
   }
   return (
-    <>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        {requiresTwoFactor(user.grants)
+    <AuthCard
+      title="Aktifkan verifikasi 2 langkah"
+      description={
+        requiresTwoFactor(user.grants)
           ? "Peran Anda dapat melihat data gaji, jadi 2FA wajib diaktifkan sebelum melanjutkan."
-          : "Lindungi akun Anda dengan aplikasi authenticator."}
-      </p>
+          : "Lindungi akun Anda dengan aplikasi authenticator."
+      }
+    >
       <TwoFactorSetup />
-    </>
+    </AuthCard>
   );
 }

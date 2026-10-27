@@ -6,6 +6,7 @@ import type { Db } from "@/db/client";
 import { account, session, user } from "@/db/auth-schema";
 import { AccessDeniedError, AccessRuleError } from "./errors";
 import { COMPANY_ROLES, GLOBAL_ROLES, isGlobalRole, isOwnerManagedRole, ROLES, TWO_FACTOR_ROLES, type Grant, type Role } from "./roles";
+import { MIN_PASSWORD_LENGTH, RESERVED_COMPANY_CODES } from "./rules";
 import { auditLog, company, roleGrant } from "./schema";
 
 /** The User performing an action, as resolved by the caller (UI, API or agent). */
@@ -72,6 +73,17 @@ export async function listAccessibleCompanies(db: Executor, actor: Actor): Promi
 }
 
 // ---------------------------------------------------------------------------
+// Paging for list screens (docs/ui.md: tables page on the server)
+
+export type PageQuery = { page?: number; pageSize?: number };
+
+function paging(query: PageQuery) {
+  const pageSize = Math.min(Math.max(query.pageSize ?? 20, 1), 100);
+  const page = Math.max(query.page ?? 1, 1);
+  return { page, pageSize, offset: (page - 1) * pageSize };
+}
+
+// ---------------------------------------------------------------------------
 // Audit log
 
 type AuditEntry = {
@@ -87,30 +99,54 @@ async function audit(db: Executor, entry: AuditEntry): Promise<void> {
   await db.insert(auditLog).values(entry);
 }
 
-export async function listAuditLog(db: Db, actor: Actor, { limit = 100 } = {}) {
+export type AuditLogQuery = PageQuery & {
+  search?: string;
+  /** Actions that also match the search, e.g. those whose UI label contains it. */
+  matchingActions?: string[];
+};
+
+/** Newest first. Search matches the action, the actor's name or the Company code. */
+export async function listAuditLog(db: Db, actor: Actor, query: AuditLogQuery = {}) {
   await requireAdministrator(db, actor);
-  return db
-    .select({
-      id: auditLog.id,
-      at: auditLog.at,
-      action: auditLog.action,
-      actorName: user.name,
-      companyCode: company.code,
-      targetType: auditLog.targetType,
-      targetId: auditLog.targetId,
-      details: auditLog.details,
-    })
+  const { page, pageSize, offset } = paging(query);
+  const term = query.search?.trim();
+  const where = term
+    ? or(
+        ilike(auditLog.action, `%${term}%`),
+        ilike(user.name, `%${term}%`),
+        ilike(company.code, `%${term}%`),
+        query.matchingActions?.length ? inArray(auditLog.action, query.matchingActions) : undefined,
+      )
+    : undefined;
+  const from = () =>
+    db
+      .select({
+        id: auditLog.id,
+        at: auditLog.at,
+        action: auditLog.action,
+        actorName: user.name,
+        companyCode: company.code,
+        targetType: auditLog.targetType,
+        targetId: auditLog.targetId,
+        details: auditLog.details,
+      })
+      .from(auditLog)
+      .leftJoin(user, eq(user.id, auditLog.actorUserId))
+      .leftJoin(company, eq(company.id, auditLog.companyId))
+      .where(where);
+
+  const [{ total }] = await db
+    .select({ total: count() })
     .from(auditLog)
     .leftJoin(user, eq(user.id, auditLog.actorUserId))
     .leftJoin(company, eq(company.id, auditLog.companyId))
-    .orderBy(desc(auditLog.id))
-    .limit(limit);
+    .where(where);
+  const rows = await from().orderBy(desc(auditLog.id)).limit(pageSize).offset(offset);
+  return { rows, total, page, pageSize };
 }
 
 // ---------------------------------------------------------------------------
 // Users
-
-export const MIN_PASSWORD_LENGTH = 10;
 
 const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH, `Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter.`);
 const emailSchema = z.email("Email tidak valid.").transform((e) => e.toLowerCase());
@@ -245,18 +281,15 @@ export async function recordTwoFactorEnabled(db: Db, actor: Actor): Promise<void
   await audit(db, { actorUserId: actor.userId, action: "user.two_factor_enabled", targetType: "user", targetId: actor.userId });
 }
 
-export type UserListQuery = {
+export type UserListQuery = PageQuery & {
   search?: string;
   /** Column to sort by; prefix with "-" for descending. */
   sort?: "name" | "-name" | "email" | "-email";
-  page?: number;
-  pageSize?: number;
 };
 
 export async function listUsers(db: Db, actor: Actor, query: UserListQuery = {}) {
   await requireAdministrator(db, actor);
-  const pageSize = Math.min(Math.max(query.pageSize ?? 20, 1), 100);
-  const page = Math.max(query.page ?? 1, 1);
+  const { page, pageSize, offset } = paging(query);
   const term = query.search?.trim();
   const where = term ? or(ilike(user.name, `%${term}%`), ilike(user.email, `%${term}%`)) : undefined;
   const sort = query.sort ?? "name";
@@ -275,7 +308,7 @@ export async function listUsers(db: Db, actor: Actor, query: UserListQuery = {})
     .where(where)
     .orderBy(sort.startsWith("-") ? desc(column) : asc(column), asc(user.id))
     .limit(pageSize)
-    .offset((page - 1) * pageSize);
+    .offset(offset);
 
   const ids = users.map((u) => u.id);
   const grants = ids.length
@@ -302,12 +335,6 @@ export async function listUserOptions(db: Db, actor: Actor) {
 // ---------------------------------------------------------------------------
 // Companies
 
-/**
- * Company codes become the first URL segment (`/cva/...`, ADR-0008), so they
- * must not shadow a top-level route. Keep in sync with the folders in src/app.
- */
-export const RESERVED_COMPANY_CODES = ["API", "MASUK", "SETUP", "PENGATURAN", "KEAMANAN", "PORTAL", "LAPORAN"];
-
 const companyInput = z.object({
   code: z
     .string()
@@ -322,6 +349,33 @@ const companyInput = z.object({
     .transform((v) => v || null)
     .nullish(),
 });
+
+export type CompanyListQuery = PageQuery & {
+  search?: string;
+  sort?: "code" | "-code" | "name" | "-name";
+};
+
+/** Companies for the settings screen. Search matches code, name or NPWP. */
+export async function listCompanies(db: Db, actor: Actor, query: CompanyListQuery = {}) {
+  await requireAdministrator(db, actor);
+  const { page, pageSize, offset } = paging(query);
+  const term = query.search?.trim();
+  const where = term
+    ? or(ilike(company.code, `%${term}%`), ilike(company.name, `%${term}%`), ilike(company.npwp, `%${term}%`))
+    : undefined;
+  const sort = query.sort ?? "code";
+  const column = sort.endsWith("name") ? company.name : company.code;
+
+  const [{ total }] = await db.select({ total: count() }).from(company).where(where);
+  const rows = await db
+    .select()
+    .from(company)
+    .where(where)
+    .orderBy(sort.startsWith("-") ? desc(column) : asc(column), asc(company.id))
+    .limit(pageSize)
+    .offset(offset);
+  return { rows, total, page, pageSize };
+}
 
 export async function createCompany(
   db: Db,

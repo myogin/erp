@@ -31,16 +31,35 @@ export function formatDate(instant: Date): string {
   return displayDate.format(instant);
 }
 
-const displayDateTime = new Intl.DateTimeFormat("id-ID", {
-  timeZone: BUSINESS_TIME_ZONE,
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 /** `dd/MM/yyyy HH.mm` in WITA, for the UI. */
 export function formatDateTime(instant: Date): string {
-  return displayDateTime.format(instant);
+  const [date, time] = [formatDate(instant), displayTime.format(instant)];
+  return `${date} ${time}`;
+}
+
+const displayTime = new Intl.DateTimeFormat("id-ID", {
+  timeZone: BUSINESS_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+const wallClock = new Intl.DateTimeFormat("en-US", {
+  timeZone: BUSINESS_TIME_ZONE,
+  hourCycle: "h23",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric",
+});
+
+/**
+ * The WITA wall-clock time as a Date in UTC, for formats with no time zones
+ * (Excel): written out, it shows the same digits staff see on screen.
+ */
+export function witaWallClockAsUtc(instant: Date): Date {
+  const part = (type: string) => Number(wallClock.formatToParts(instant).find((p) => p.type === type)!.value);
+  return new Date(Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second")));
 }
