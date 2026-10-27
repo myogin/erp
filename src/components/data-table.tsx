@@ -8,7 +8,7 @@ import {
   type SortingState,
   type Updater,
 } from "@tanstack/react-table";
-import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon, InboxIcon, SearchIcon, SearchXIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,10 @@ type Props<T> = {
   searchPlaceholder?: string;
   /** Extra controls next to the search box, e.g. an export button. */
   toolbar?: ReactNode;
+  /** Shown when the list has no rows at all; a search with no hits gets its own message. */
   emptyMessage?: string;
+  /** Next step under the empty message, e.g. the page's "Tambah …" button. */
+  emptyAction?: ReactNode;
   /** Data the column definitions need, read in cells as `table.options.meta`. */
   meta?: Record<string, unknown>;
 };
@@ -49,7 +52,8 @@ export function DataTable<T>({
   pageSize,
   searchPlaceholder = "Cari…",
   toolbar,
-  emptyMessage = "Tidak ada data.",
+  emptyMessage = "Belum ada data.",
+  emptyAction,
   meta,
 }: Props<T>) {
   const router = useRouter();
@@ -97,22 +101,24 @@ export function DataTable<T>({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to typing
   }, [search]);
 
+  const appliedSearch = searchParams.get("q");
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="relative max-w-sm flex-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm min-w-48 flex-1">
           <SearchIcon className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={searchPlaceholder} className="pl-8" aria-label="Cari" />
         </div>
         <div className="ml-auto flex items-center gap-2">{toolbar}</div>
       </div>
 
-      <div className={cn("rounded-lg border transition-opacity", pending && "opacity-60")}>
-        <Table>
+      <div className={cn("overflow-hidden rounded-lg border bg-card transition-opacity", pending && "opacity-60")} aria-busy={pending}>
+        {/* Scrolls inside its own box so the sticky header stays visible on long pages. */}
+        <Table containerClassName="max-h-[max(24rem,calc(100svh-16rem))] overflow-y-auto">
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
@@ -122,7 +128,7 @@ export function DataTable<T>({
                   return (
                     <TableHead key={header.id} className={header.column.columnDef.meta?.className}>
                       {header.column.getCanSort() ? (
-                        <Button variant="ghost" size="sm" className="-ml-2 h-8" onClick={header.column.getToggleSortingHandler()}>
+                        <Button variant="ghost" size="xs" className="-mx-2 text-xs font-medium text-muted-foreground hover:text-foreground" onClick={header.column.getToggleSortingHandler()}>
                           {label}
                           {sorted === "asc" ? <ArrowUpIcon /> : sorted === "desc" ? <ArrowDownIcon /> : <ArrowUpDownIcon className="opacity-40" />}
                         </Button>
@@ -137,9 +143,19 @@ export function DataTable<T>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  {emptyMessage}
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columns.length} className="h-auto py-12">
+                  {appliedSearch ? (
+                    <EmptyState icon={<SearchXIcon />} title={`Tidak ada hasil untuk “${appliedSearch}”`}>
+                      <Button variant="outline" size="sm" onClick={() => setSearch("")}>
+                        Hapus pencarian
+                      </Button>
+                    </EmptyState>
+                  ) : (
+                    <EmptyState icon={<InboxIcon />} title={emptyMessage}>
+                      {emptyAction}
+                    </EmptyState>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
@@ -165,14 +181,26 @@ export function DataTable<T>({
           <span>
             Halaman {page} dari {pageCount}
           </span>
-          <Button variant="outline" size="icon" aria-label="Halaman sebelumnya" disabled={page <= 1 || pending} onClick={() => navigate({ page: page - 1 > 1 ? String(page - 1) : null })}>
+          <Button variant="outline" size="icon-sm" aria-label="Halaman sebelumnya" disabled={page <= 1 || pending} onClick={() => navigate({ page: page - 1 > 1 ? String(page - 1) : null })}>
             <ChevronLeftIcon />
           </Button>
-          <Button variant="outline" size="icon" aria-label="Halaman berikutnya" disabled={page >= pageCount || pending} onClick={() => navigate({ page: String(page + 1) })}>
+          <Button variant="outline" size="icon-sm" aria-label="Halaman berikutnya" disabled={page >= pageCount || pending} onClick={() => navigate({ page: String(page + 1) })}>
             <ChevronRightIcon />
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon, title, children }: { icon: ReactNode; title: string; children?: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 text-center whitespace-normal">
+      <div className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground [&_svg]:size-5" aria-hidden>
+        {icon}
+      </div>
+      <p className="font-medium">{title}</p>
+      {children}
     </div>
   );
 }

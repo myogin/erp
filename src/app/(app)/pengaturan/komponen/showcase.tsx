@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ConfirmAction } from "@/components/confirm-action";
 import { DataTable } from "@/components/data-table";
 import { DatePicker } from "@/components/date-picker";
+import { FormActions, FormSection as LongFormSection } from "@/components/form-layout";
 import { FormError } from "@/components/form-error";
 import { MoneyInput } from "@/components/money-input";
 import { OneTimeSecret } from "@/components/one-time-secret";
@@ -35,6 +36,7 @@ const SECTIONS = [
   ["warna", "Warna & tipografi"],
   ["tombol", "Tombol & badge"],
   ["form", "Form"],
+  ["form-panjang", "Form panjang"],
   ["format", "Format angka & tanggal"],
   ["dialog", "Dialog & konfirmasi"],
   ["umpan-balik", "Toast, menu & tooltip"],
@@ -47,7 +49,7 @@ export function Showcase(table: { rows: Row[]; total: number; page: number; page
     <>
       <nav className="flex flex-wrap gap-2 text-sm">
         {SECTIONS.map(([id, title]) => (
-          <a key={id} href={`#${id}`} className="rounded-md border px-2.5 py-1 hover:bg-muted">
+          <a key={id} href={`#${id}`} className="rounded-md border bg-card px-2.5 py-1 hover:bg-muted">
             {title}
           </a>
         ))}
@@ -55,6 +57,7 @@ export function Showcase(table: { rows: Row[]; total: number; page: number; page
       <ColorsSection />
       <ButtonsSection />
       <FormSection />
+      <LongFormDemo />
       <FormatSection />
       <DialogSection />
       <FeedbackSection />
@@ -91,13 +94,16 @@ function ColorsSection() {
     ["secondary", "bg-secondary", "Tombol & badge sekunder"],
     ["muted", "bg-muted", "Latar lembut, teks redup"],
     ["accent", "bg-accent", "Hover"],
-    ["destructive", "bg-destructive", "Aksi berbahaya, error"],
+    ["destructive", "bg-destructive", "Aksi berbahaya, error, Dibatalkan"],
+    ["success", "bg-success", "Berhasil, Diposting, Lunas"],
+    ["warning", "bg-warning", "Perlu perhatian, Menunggu"],
+    ["info", "bg-info", "Informasi netral"],
     ["border", "bg-border", "Garis & border input"],
     ["sidebar", "bg-sidebar", "Latar sidebar"],
   ];
   return (
-    <Section id="warna" title="Warna & tipografi" description="Mode terang saja. Ganti --primary di globals.css untuk warna brand.">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+    <Section id="warna" title="Warna & tipografi" description="Mode terang saja, netral slate dengan aksen biru. Ganti --primary di globals.css untuk warna brand. Warna status selalu dipasangkan dengan teks, tidak berdiri sendiri.">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         {swatches.map(([name, bg, use]) => (
           <div key={name} className="space-y-1.5">
             <div className={`h-14 rounded-lg border ${bg}`} />
@@ -106,8 +112,17 @@ function ColorsSection() {
           </div>
         ))}
       </div>
+      <Example label="Grafik (--chart-1 … --chart-5, aman untuk buta warna)">
+        {["bg-chart-1", "bg-chart-2", "bg-chart-3", "bg-chart-4", "bg-chart-5"].map((bg, i) => (
+          <div key={bg} className="flex items-center gap-1.5 text-xs">
+            <span className={`size-4 rounded-sm ${bg}`} />
+            Seri {i + 1}
+          </div>
+        ))}
+      </Example>
       <div className="space-y-1">
-        <p className="text-2xl font-semibold">Judul halaman (text-2xl)</p>
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Plus Jakarta Sans</p>
+        <p className="text-2xl font-semibold tracking-tight">Judul halaman (text-2xl)</p>
         <p className="text-lg font-semibold">Judul bagian (text-lg)</p>
         <p className="text-sm">Teks isi (text-sm), dipakai di form dan tabel.</p>
         <p className="text-sm text-muted-foreground">Teks keterangan (text-muted-foreground).</p>
@@ -143,11 +158,14 @@ function ButtonsSection() {
         </Button>
         <Button disabled>Nonaktif</Button>
       </Example>
-      <Example label="Badge">
-        <Badge>Diposting</Badge>
+      <Example label="Badge status">
         <Badge variant="secondary">Draf</Badge>
+        <Badge variant="warning">Menunggu persetujuan</Badge>
+        <Badge variant="success">Diposting</Badge>
+        <Badge variant="destructive">Dibatalkan</Badge>
+        <Badge variant="info">Dihitung ulang</Badge>
         <Badge variant="outline">Periode terbuka</Badge>
-        <Badge variant="destructive">Ditolak</Badge>
+        <Badge>Baru</Badge>
       </Example>
     </Section>
   );
@@ -226,6 +244,45 @@ function FormSection() {
   );
 }
 
+function LongFormDemo() {
+  return (
+    <Section id="form-panjang" title="Form panjang" description="Form panjang atau bertahap punya halaman sendiri: dibagi per bagian, tombol Simpan/Batal menempel di bawah layar.">
+      <div className="rounded-lg border bg-card p-6 pb-0">
+        <form onSubmit={(e) => { e.preventDefault(); toast.success("Contoh tersimpan."); }}>
+          <LongFormSection title="Data pribadi" description="Sesuai KTP.">
+            <FieldGroup className="md:grid md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="demo-emp-name">Nama lengkap</FieldLabel>
+                <Input id="demo-emp-name" defaultValue="Siti Rahmawati" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="demo-emp-nik">NIK</FieldLabel>
+                <Input id="demo-emp-nik" inputMode="numeric" defaultValue="6471010101900001" />
+              </Field>
+            </FieldGroup>
+          </LongFormSection>
+          <LongFormSection title="Gaji" description="Komponen tetap per bulan.">
+            <FieldGroup className="md:grid md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="demo-emp-salary">Gaji pokok</FieldLabel>
+                <MoneyInput id="demo-emp-salary" name="salary" defaultValue="6500000" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="demo-emp-start">Mulai bekerja</FieldLabel>
+                <DatePicker id="demo-emp-start" name="start" defaultValue="2027-01-02" />
+              </Field>
+            </FieldGroup>
+          </LongFormSection>
+          <FormActions className="-mx-6 mb-0 rounded-b-lg">
+            <Button type="button" variant="outline">Batal</Button>
+            <Button type="submit">Simpan karyawan</Button>
+          </FormActions>
+        </form>
+      </div>
+    </Section>
+  );
+}
+
 function FormatSection() {
   const now = new Date();
   const rows: [string, string][] = [
@@ -239,7 +296,7 @@ function FormatSection() {
   ];
   return (
     <Section id="format" title="Format angka & tanggal" description="Rupiah tanpa ,00 kecuali ada sen. Semua waktu dalam WITA.">
-      <div className="max-w-md overflow-hidden rounded-lg border text-sm">
+      <div className="max-w-md overflow-hidden rounded-lg border bg-card text-sm">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between border-b px-3 py-2 last:border-b-0">
             <span className="text-muted-foreground">{label}</span>

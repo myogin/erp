@@ -132,7 +132,7 @@ function RowActions({ user, companies, isSelf }: { user: UserRow; companies: Com
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={`Aksi untuk ${user.name}`}>
+          <Button variant="ghost" size="icon-sm" aria-label={`Aksi untuk ${user.name}`}>
             <MoreHorizontalIcon />
           </Button>
         </DropdownMenuTrigger>
