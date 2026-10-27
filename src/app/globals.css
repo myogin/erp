@@ -114,8 +114,8 @@
   }
   html {
     @apply font-sans;
-    /* 17px root (from the browser's 16px, so user zoom settings still apply): everything rem-based grows ~6%. */
-    font-size: 106.25%;
+    /* 18px root (from the browser's 16px, so user zoom settings still apply): everything rem-based grows 12.5%. */
+    font-size: 112.5%;
     /* Native controls (scrollbars, date pickers, autofill) stay light too. */
     color-scheme: light;
   }
