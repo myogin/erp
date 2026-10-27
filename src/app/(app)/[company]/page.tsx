@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { requireCompany } from "@/lib/session";
 import { ROLE_LABELS } from "@/modules/access";
 
@@ -8,11 +9,15 @@ export default async function CompanyHomePage({ params }: PageProps<"/[company]"
 
   return (
     <>
-      <div>
-        <p className="font-mono text-sm text-muted-foreground">{company.code}</p>
-        <h1 className="text-2xl font-semibold">{company.name}</h1>
-        {company.npwp && <p className="text-sm text-muted-foreground">NPWP {company.npwp}</p>}
-      </div>
+      <PageHeader
+        title={company.name}
+        description={
+          <>
+            <span className="font-mono">{company.code}</span>
+            {company.npwp && <> · NPWP {company.npwp}</>}
+          </>
+        }
+      />
       <p className="text-sm">
         Peran Anda di sini: <span className="font-medium">{roles.join(", ")}</span>
       </p>

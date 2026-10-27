@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { requireAdministrator } from "@/lib/session";
 import { listParams } from "@/lib/list-params";
 import { Showcase } from "./showcase";
@@ -25,12 +26,11 @@ export default async function ComponentsPage({ searchParams }: PageProps<"/penga
 
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-semibold">Komponen UI</h1>
-        <p className="text-sm text-muted-foreground">
-          Acuan visual untuk semua halaman (docs/ui.md). Semua aksi di sini hanya contoh dan tidak mengubah data.
-        </p>
-      </div>
+      <PageHeader
+        breadcrumbs={[{ label: "Pengaturan" }]}
+        title="Komponen UI"
+        description="Acuan visual untuk semua halaman (docs/ui.md). Halaman ini sendiri memakai page header standar. Semua aksi di sini hanya contoh dan tidak mengubah data."
+      />
       <Showcase rows={filtered.slice((page - 1) * pageSize, page * pageSize)} total={filtered.length} page={page} pageSize={pageSize} />
     </>
   );

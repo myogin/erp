@@ -112,7 +112,7 @@ export function UsersTable({ rows, total, page, pageSize, currentUserId, compani
       page={page}
       pageSize={pageSize}
       searchPlaceholder="Cari nama atau email…"
-      emptyMessage="Tidak ada pengguna yang cocok."
+      emptyMessage="Belum ada pengguna."
       meta={{ companies, currentUserId } satisfies TableMeta}
       toolbar={
         <Button variant="outline" asChild>
@@ -132,7 +132,7 @@ function RowActions({ user, companies, isSelf }: { user: UserRow; companies: Com
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={`Aksi untuk ${user.name}`}>
+          <Button variant="ghost" size="icon-sm" aria-label={`Aksi untuk ${user.name}`}>
             <MoreHorizontalIcon />
           </Button>
         </DropdownMenuTrigger>
