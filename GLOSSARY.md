@@ -37,15 +37,23 @@ Role that reads reports and dashboards but does not enter transactions.
 ## Accounting
 
 **Chart of Accounts** [Bagan Akun]:
-The list of Accounts for one Company, copied from the shared COA Template so account codes match across Companies.
+The list of Accounts for one Company: everything copied from the shared COA Template, plus that Company's own Sub-accounts.
 _Avoid_: COA list, ledger list
 
 **COA Template**:
-The standard set of account codes that every Company's Chart of Accounts is created from.
+The standard set of account codes that every Company's Chart of Accounts is created from. Designed for this ERP, not copied from a Legacy System.
 
 **Account** [Akun]:
 A single line in a Chart of Accounts that balances are tracked against.
 _Avoid_: Ledger, GL code
+
+**Header Account** [Akun Induk]:
+An Account that only groups the Accounts beneath it. It never receives a Posting; its balance is the sum of its children.
+_Avoid_: Parent account, group account
+
+**Sub-account** [Sub-akun]:
+An Account a Company adds beneath a COA Template Account for detail only it needs, such as one bank account or one raw material. Other Companies do not have it.
+_Avoid_: Child account, custom account
 
 **Journal Entry** [Jurnal]:
 A dated set of debit and credit lines whose totals are equal. Every financial effect in the system ends up as a Journal Entry.
@@ -113,6 +121,10 @@ The minimal self-service area where an Employee views and downloads their own Pa
 **Legacy System**:
 Accurate (accounting) or gaji.id (payroll), the systems this ERP replaces.
 _Avoid_: Old app
+
+**Account Mapping** [Pemetaan Akun]:
+For one Company, which ERP Account each Legacy System account code corresponds to. Used to bring over Opening Balances and to reconcile a Parallel Run; discarded after Cutover.
+_Avoid_: COA mapping, conversion table
 
 **Usage Audit**:
 The survey of which Legacy System features are actually used. Anything absent from it is not built.
