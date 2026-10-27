@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# Python bytecode (e.g. from the ui-ux-pro-max skill scripts)
+__pycache__/
