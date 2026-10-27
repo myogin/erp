@@ -6,6 +6,7 @@ import {
   HomeIcon,
   LockIcon,
   NotebookPenIcon,
+  PaletteIcon,
   ReceiptIcon,
   ScaleIcon,
   ScrollTextIcon,
@@ -67,6 +68,7 @@ export function navigation(grants: Grant[], company: { id: string; code: string 
         { title: "Perusahaan", href: "/pengaturan/perusahaan", icon: BuildingIcon },
         { title: "Pengguna", href: "/pengaturan/pengguna", icon: ShieldIcon },
         { title: "Audit Log", href: "/pengaturan/audit", icon: ScrollTextIcon },
+        { title: "Komponen UI", href: "/pengaturan/komponen", icon: PaletteIcon },
       ],
     });
   }

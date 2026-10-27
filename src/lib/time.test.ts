@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessDate, businessMonth, formatDate, formatDateTime, witaWallClockAsUtc } from "./time";
+import { businessDate, businessMonth, formatDate, formatDateTime, formatIsoDate, witaWallClockAsUtc } from "./time";
 
 describe("business time", () => {
   // 16:30 UTC on 31 Dec is already 00:30 on 1 Jan in WITA (UTC+8).
@@ -20,5 +20,9 @@ describe("business time", () => {
 
   it("gives the WITA wall-clock time as UTC digits, for Excel", () => {
     expect(witaWallClockAsUtc(newYearInWita).toISOString()).toBe("2027-01-01T00:30:00.000Z");
+  });
+
+  it("shows a business date string as dd/MM/yyyy", () => {
+    expect(formatIsoDate("2027-01-31")).toBe("31/01/2027");
   });
 });

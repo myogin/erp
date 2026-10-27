@@ -46,3 +46,26 @@ export function formatRupiah(value: Money): string {
   // Intl formats decimal strings exactly; Number() would lose precision on large amounts.
   return formatter.format(toMoneyString(value) as `${number}`);
 }
+
+// ---------------------------------------------------------------------------
+// Typing money in Indonesian format: "1.500.000,50" (docs/ui.md)
+
+/**
+ * Reformats what the user typed: thousands grouped with ".", at most one ","
+ * followed by at most 2 digits. Anything else is dropped.
+ */
+export function formatRupiahInput(typed: string): string {
+  const negative = typed.trim().startsWith("-");
+  const [whole = "", ...rest] = typed.replace(/[^\d,]/g, "").split(",");
+  const digits = whole.replace(/^0+(?=\d)/, "");
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const text = rest.length > 0 ? `${grouped || "0"},${rest.join("").slice(0, MONEY_SCALE)}` : grouped;
+  return negative && text ? `-${text}` : text;
+}
+
+/** The amount in an Indonesian-format string, or null if there is none. */
+export function parseRupiahInput(text: string): Money | null {
+  const formatted = formatRupiahInput(text);
+  if (!formatted || formatted === "-") return null;
+  return money(formatted.replace(/\./g, "").replace(",", "."));
+}

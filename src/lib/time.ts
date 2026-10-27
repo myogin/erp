@@ -63,3 +63,9 @@ export function witaWallClockAsUtc(instant: Date): Date {
   const part = (type: string) => Number(wallClock.formatToParts(instant).find((p) => p.type === type)!.value);
   return new Date(Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second")));
 }
+
+/** "2027-01-31" (a business date, no time) as "31/01/2027". */
+export function formatIsoDate(iso: string): string {
+  const [year, month, day] = iso.split("-");
+  return `${day}/${month}/${year}`;
+}

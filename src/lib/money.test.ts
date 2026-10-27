@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRupiah, money } from "./money";
+import { formatRupiah, formatRupiahInput, money, parseRupiahInput } from "./money";
 
 // Intl separates the symbol with a non-breaking space.
 const NBSP = " ";
@@ -21,5 +21,22 @@ describe("money", () => {
 
   it("formats the largest numeric(18,2) amount without losing cents", () => {
     expect(formatRupiah(money("9999999999999999.99"))).toBe(`Rp${NBSP}9.999.999.999.999.999,99`);
+  });
+
+  it("groups thousands while typing and keeps at most 2 decimals", () => {
+    expect(formatRupiahInput("1500000")).toBe("1.500.000");
+    expect(formatRupiahInput("1.500.000,505")).toBe("1.500.000,50");
+    expect(formatRupiahInput("Rp 007a5")).toBe("75");
+    expect(formatRupiahInput(",5")).toBe("0,5");
+    expect(formatRupiahInput("-2500")).toBe("-2.500");
+    expect(formatRupiahInput("")).toBe("");
+  });
+
+  it("parses Indonesian-format input exactly", () => {
+    expect(parseRupiahInput("1.500.000,50")?.toFixed(2)).toBe("1500000.50");
+    expect(parseRupiahInput("1500000")?.toFixed(2)).toBe("1500000.00");
+    expect(parseRupiahInput("-2.500")?.toFixed(2)).toBe("-2500.00");
+    expect(parseRupiahInput("")).toBeNull();
+    expect(parseRupiahInput("abc")).toBeNull();
   });
 });
