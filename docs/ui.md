@@ -27,7 +27,7 @@ Every component and pattern below is on one page: **Pengaturan → Komponen UI**
 - **List pages**: a page header whose action is the primary "Tambah …" button, then the full-width table. Search and secondary actions (Ekspor Excel) sit in the table's toolbar row.
 - **Short forms** (a few fields: Company, User, Role) open in a **dialog**. **Long or multi-step forms** (Journal Entry lines, Employee data, a Payroll Run) get **their own page**, split into `FormSection`s (title and help on the left, fields on the right) and ending with `FormActions`, a Simpan/Batal bar that sticks to the bottom of the window.
 - **Tables** use the shared `DataTable` (TanStack Table): pagination, sorting and search run **on the server** through URL search params, so the URL describes the view. Main tables offer **Ekspor Excel**.
-- The table scrolls inside its own box with a **sticky header**, so column names stay visible on long pages.
+- Tables scroll with the page, never inside their own box (a page holds 20 rows, so the header stays close); they scroll sideways only when the screen is too narrow.
 - **Empty states**: an empty list says so and shows the next step (pass the page's "Tambah …" button as `emptyAction`); a search without hits says so and offers to clear the search.
 - Figures in tables are right-aligned with tabular digits (the `numeric` utility).
 

@@ -117,8 +117,7 @@ export function DataTable<T>({
       </div>
 
       <div className={cn("overflow-hidden rounded-lg border bg-card transition-opacity", pending && "opacity-60")} aria-busy={pending}>
-        {/* Scrolls inside its own box so the sticky header stays visible on long pages. */}
-        <Table containerClassName="max-h-[max(24rem,calc(100svh-16rem))] overflow-y-auto">
+        <Table>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
