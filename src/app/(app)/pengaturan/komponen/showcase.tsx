@@ -121,7 +121,7 @@ function ColorsSection() {
         ))}
       </Example>
       <div className="space-y-1">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Plus Jakarta Sans</p>
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Geist</p>
         <p className="text-2xl font-semibold tracking-tight">Judul halaman (text-2xl)</p>
         <p className="text-lg font-semibold">Judul bagian (text-lg)</p>
         <p className="text-sm">Teks isi (text-sm), dipakai di form dan tabel.</p>
