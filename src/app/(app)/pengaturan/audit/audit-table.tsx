@@ -43,7 +43,7 @@ export function AuditTable({ rows, total, page, pageSize }: { rows: AuditRow[]; 
       page={page}
       pageSize={pageSize}
       searchPlaceholder="Cari tindakan, pelaku, atau kode CV…"
-      emptyMessage="Tidak ada entri yang cocok."
+      emptyMessage="Belum ada entri."
       toolbar={
         <Button variant="outline" asChild>
           <a href={`/pengaturan/audit/ekspor${q ? `?q=${encodeURIComponent(q)}` : ""}`}>

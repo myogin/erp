@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db/client";
 import { requireAdministrator } from "@/lib/session";
 import { listParams } from "@/lib/list-params";
@@ -17,13 +18,12 @@ export default async function UsersPage({ searchParams }: PageProps<"/pengaturan
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Pengguna</h1>
-          <p className="text-sm text-muted-foreground">Akun yang bisa masuk ke ERP dan perannya.</p>
-        </div>
-        <CreateUserDialog />
-      </div>
+      <PageHeader
+        breadcrumbs={[{ label: "Pengaturan" }]}
+        title="Pengguna"
+        description="Akun yang bisa masuk ke ERP dan perannya."
+        actions={<CreateUserDialog />}
+      />
       <UsersTable
         rows={list.rows}
         total={list.total}

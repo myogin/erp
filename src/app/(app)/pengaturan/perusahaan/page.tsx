@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db/client";
 import { listParams } from "@/lib/list-params";
 import { requireAdministrator } from "@/lib/session";
@@ -12,14 +13,13 @@ export default async function CompaniesPage({ searchParams }: PageProps<"/pengat
   const list = await listCompanies(getDb(), actor, listParams(await searchParams, SORTS));
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Perusahaan</h1>
-          <p className="text-sm text-muted-foreground">CV yang dikelola di ERP. Kode dipakai di alamat halaman dan nomor dokumen.</p>
-        </div>
-        <CreateCompanyDialog />
-      </div>
-      <CompaniesTable rows={list.rows} total={list.total} page={list.page} pageSize={list.pageSize} />
+      <PageHeader
+        breadcrumbs={[{ label: "Pengaturan" }]}
+        title="Perusahaan"
+        description="CV yang dikelola di ERP. Kode dipakai di alamat halaman dan nomor dokumen."
+        actions={<CreateCompanyDialog />}
+      />
+      <CompaniesTable rows={list.rows} total={list.total} page={list.page} pageSize={list.pageSize} emptyAction={<CreateCompanyDialog />} />
     </>
   );
 }

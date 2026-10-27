@@ -112,7 +112,7 @@ export function UsersTable({ rows, total, page, pageSize, currentUserId, compani
       page={page}
       pageSize={pageSize}
       searchPlaceholder="Cari nama atau email…"
-      emptyMessage="Tidak ada pengguna yang cocok."
+      emptyMessage="Belum ada pengguna."
       meta={{ companies, currentUserId } satisfies TableMeta}
       toolbar={
         <Button variant="outline" asChild>

@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { DataTable } from "@/components/data-table";
 
 type CompanyRow = { id: string; code: string; name: string; npwp: string | null };
@@ -23,7 +24,19 @@ const columns: ColumnDef<CompanyRow>[] = [
   { accessorKey: "npwp", header: "NPWP", cell: ({ row }) => row.original.npwp ?? <span className="text-muted-foreground">–</span> },
 ];
 
-export function CompaniesTable({ rows, total, page, pageSize }: { rows: CompanyRow[]; total: number; page: number; pageSize: number }) {
+export function CompaniesTable({
+  rows,
+  total,
+  page,
+  pageSize,
+  emptyAction,
+}: {
+  rows: CompanyRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  emptyAction?: ReactNode;
+}) {
   return (
     <DataTable
       columns={columns}
@@ -33,6 +46,7 @@ export function CompaniesTable({ rows, total, page, pageSize }: { rows: CompanyR
       pageSize={pageSize}
       searchPlaceholder="Cari kode, nama, atau NPWP…"
       emptyMessage="Belum ada perusahaan."
+      emptyAction={emptyAction}
     />
   );
 }

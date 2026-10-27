@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { getDb } from "@/db/client";
 import { actionsMatchingLabel } from "@/lib/audit-labels";
 import { listParams } from "@/lib/list-params";
@@ -11,10 +12,11 @@ export default async function AuditPage({ searchParams }: PageProps<"/pengaturan
   const list = await listAuditLog(getDb(), actor, { ...params, matchingActions: actionsMatchingLabel(params.search) });
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-semibold">Audit Log</h1>
-        <p className="text-sm text-muted-foreground">Catatan tindakan penting, terbaru di atas. Tidak bisa diubah atau dihapus. Waktu dalam WITA.</p>
-      </div>
+      <PageHeader
+        breadcrumbs={[{ label: "Pengaturan" }]}
+        title="Audit Log"
+        description="Catatan tindakan penting, terbaru di atas. Tidak bisa diubah atau dihapus. Waktu dalam WITA."
+      />
       <AuditTable rows={list.rows} total={list.total} page={list.page} pageSize={list.pageSize} />
     </>
   );
