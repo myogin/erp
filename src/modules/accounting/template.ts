@@ -1,28 +1,13 @@
-// Proposed COA Template for Finance review (issue #22, ADR-0009). Not final:
-// once approved it moves into the accounting module for #5. Names follow
-// Accurate (the majority name when the CVs differ, "Beban" for expenses).
+import type { AccountType } from "./rules";
 
-export const ACCOUNT_TYPES = {
-  CASH_BANK: "Kas & Bank",
-  ACCOUNT_RECEIVABLE: "Piutang",
-  INVENTORY: "Persediaan",
-  OTHER_CURRENT_ASSET: "Aset Lancar Lainnya",
-  FIXED_ASSET: "Aset Tetap",
-  ACCUMULATED_DEPRECIATION: "Akumulasi Penyusutan",
-  ACCOUNT_PAYABLE: "Utang Usaha",
-  OTHER_CURRENT_LIABILITY: "Utang Lancar Lainnya",
-  LONG_TERM_LIABILITY: "Utang Jangka Panjang",
-  EQUITY: "Ekuitas",
-  REVENUE: "Pendapatan",
-  COGS: "Beban Pokok Penjualan",
-  EXPENSE: "Beban",
-  OTHER_INCOME: "Pendapatan Lain",
-  OTHER_EXPENSE: "Beban Lain",
-} as const;
+// The COA Template every Company's Chart of Accounts is created from (ADR-0009).
+// Still a draft until Finance approves it (#22), which must happen before
+// Opening Balances (#17). Changes reach existing Companies through
+// syncChartTemplate on the next start. Names follow Accurate (the majority
+// name when the CVs differ, "Beban" for expenses). Children are numbered
+// parent code + 01-49; 50-99 is left for Sub-accounts.
 
-export type AccountType = keyof typeof ACCOUNT_TYPES;
-
-export type DraftAccount = { code: string; name: string; type: AccountType; header: boolean };
+export type TemplateAccount = { code: string; name: string; type: AccountType; header: boolean };
 
 // Each header is followed by its children; children take the header's type.
 type Group = [code: string, name: string, type: AccountType, children: [code: string, name: string][]];
@@ -219,7 +204,7 @@ const GROUPS: Group[] = [
   ]],
 ];
 
-export const TEMPLATE: DraftAccount[] = GROUPS.flatMap(([code, name, type, children]) => [
+export const TEMPLATE: TemplateAccount[] = GROUPS.flatMap(([code, name, type, children]) => [
   { code, name, type, header: true },
   ...children.map(([childCode, childName]) => ({ code: childCode, name: childName, type, header: false })),
 ]);

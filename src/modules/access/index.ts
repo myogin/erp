@@ -4,6 +4,7 @@ export * from "./errors";
 export * from "./roles";
 export * from "./rules";
 export {
+  audit as writeAuditLog,
   assertCompanyAccess,
   bootstrapOwner,
   canAccessCompany,
