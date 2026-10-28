@@ -69,3 +69,17 @@ export function formatIsoDate(iso: string): string {
   const [year, month, day] = iso.split("-");
   return `${day}/${month}/${year}`;
 }
+
+const monthName = new Intl.DateTimeFormat("id-ID", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** "Oktober 2026" for the month `YYYY-MM`. */
+export function formatMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return monthName.format(new Date(Date.UTC(y, m - 1, 1)));
+}
+
+/** The month after `YYYY-MM`. */
+export function nextMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+}

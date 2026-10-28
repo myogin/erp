@@ -76,15 +76,19 @@ Making a Journal Entry final. A posted Journal Entry can never be edited or dele
 _Avoid_: Save, commit, approve
 
 **Reversal** [Jurnal Balik]:
-A new Journal Entry that cancels a posted one line for line. The only way to correct a posted entry.
+A new Journal Entry that cancels a posted one line for line. The only way to correct a posted entry. Each posted entry can be reversed once, and a Reversal itself is never reversed.
 _Avoid_: Void, delete, undo
 
 **Accounting Period** [Periode]:
 A calendar month of one Company's books.
 
 **Period Close** [Tutup Buku]:
-Locking an Accounting Period so nothing more can be posted with a date inside it.
+Locking an Accounting Period so nothing more can be posted with a date inside it. Periods close in order, one month after another.
 _Avoid_: Freeze, finalise
+
+**Period Reopen** [Buka Kembali Periode]:
+Undoing the latest Period Close of a Company, by the Owner only and with a stated reason.
+_Avoid_: Unlock, unclose
 
 **Document Number** [Nomor Dokumen]:
 A gap-free sequential identifier per Company, Document Type and year, given at Posting, e.g. `JV/MERUBALI/2026/00001`. The year is that of the document's date.

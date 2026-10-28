@@ -43,7 +43,7 @@ export function navigation(grants: Grant[], company: { id: string; code: string 
         { title: "Bagan Akun", href: `${base}/akun`, icon: BookOpenIcon },
         { title: "Jurnal", href: `${base}/jurnal`, icon: NotebookPenIcon },
         { title: "Neraca Saldo", href: `${base}/neraca-saldo`, icon: ScaleIcon, soon: true },
-        { title: "Tutup Buku", href: `${base}/tutup-buku`, icon: LockIcon, soon: true },
+        { title: "Tutup Buku", href: `${base}/tutup-buku`, icon: LockIcon },
       ],
     });
   }
