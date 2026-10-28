@@ -1,5 +1,7 @@
 import { Trash2Icon } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +10,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { getDb } from "@/db/client";
 import { formatRupiah, money } from "@/lib/money";
 import { requireCompany } from "@/lib/session";
-import { formatDateTime, formatIsoDate } from "@/lib/time";
+import { businessDate, formatDateTime, formatIsoDate } from "@/lib/time";
 import { AccessDeniedError } from "@/modules/access";
 import {
   AccountingRuleError,
@@ -22,6 +24,7 @@ import {
 } from "@/modules/accounting";
 import { deleteDraftAction } from "../actions";
 import { JournalForm } from "../journal-form";
+import { ReverseDialog } from "./reverse-dialog";
 
 export default async function JournalPage({ params }: PageProps<"/[company]/jurnal/[id]">) {
   const { company: code, id } = await params;
@@ -89,25 +92,44 @@ export default async function JournalPage({ params }: PageProps<"/[company]/jurn
     );
   }
 
+  // A Reversal can't be reversed, and an entry is reversed only once.
+  const canReverse =
+    entry.status === "posted" && !entry.reverses && !entry.reversedBy && canEditChartOfAccounts(user.grants, company.id);
   return (
     <>
       <PageHeader
         breadcrumbs={breadcrumbs}
         title={entry.documentNumber ?? "Draf jurnal"}
         description={entry.description}
-        actions={<Badge variant={entry.status === "posted" ? "success" : "secondary"}>{JOURNAL_STATUS_LABELS[entry.status]}</Badge>}
+        actions={
+          <div className="flex items-center gap-3">
+            {entry.reversedBy && <Badge variant="warning">Dibalik</Badge>}
+            {entry.reverses && <Badge variant="info">Jurnal balik</Badge>}
+            <Badge variant={entry.status === "posted" ? "success" : "secondary"}>{JOURNAL_STATUS_LABELS[entry.status]}</Badge>
+            {canReverse && (
+              <ReverseDialog entry={{ id: entry.id, documentNumber: entry.documentNumber! }} companyCode={company.code} today={businessDate()} />
+            )}
+          </div>
+        }
       />
-      <JournalDetail entry={entry} />
+      <JournalDetail entry={entry} base={base} />
     </>
   );
 }
 
-function JournalDetail({ entry }: { entry: JournalEntryDetail }) {
-  const facts: [string, string][] = [
+function JournalDetail({ entry, base }: { entry: JournalEntryDetail; base: string }) {
+  const link = (target: { id: string; documentNumber: string }) => (
+    <Link href={`${base}/${target.id}`} className="font-mono hover:underline">
+      {target.documentNumber}
+    </Link>
+  );
+  const facts: [string, ReactNode][] = [
     ["Tanggal", formatIsoDate(entry.date)],
     ["Dibuat oleh", entry.createdByName ?? "–"],
-    ...(entry.postedAt ? ([["Diposting", `${formatDateTime(entry.postedAt)} oleh ${entry.postedByName ?? "–"}`]] as [string, string][]) : []),
   ];
+  if (entry.postedAt) facts.push(["Diposting", `${formatDateTime(entry.postedAt)} oleh ${entry.postedByName ?? "–"}`]);
+  if (entry.reverses) facts.push(["Membalik", link(entry.reverses)]);
+  if (entry.reversedBy) facts.push(["Dibalik oleh", link(entry.reversedBy)]);
   return (
     <div className="space-y-6">
       <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-[10rem_1fr]">

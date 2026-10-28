@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getDb } from "@/db/client";
 import { actionError, formString, type ActionState } from "@/lib/action-state";
 import { requireUser } from "@/lib/session";
-import { deleteDraft, saveAndPost, saveDraft, type JournalLineInput } from "@/modules/accounting";
+import { deleteDraft, reverseEntry, saveAndPost, saveDraft, type JournalLineInput } from "@/modules/accounting";
 
 /**
  * The journal form. `intent` is "post" to save and post in one step (nothing is
@@ -38,4 +38,19 @@ export async function deleteDraftAction(_: ActionState, formData: FormData): Pro
     return actionError(error);
   }
   redirect(`/${formString(formData, "companyCode").toLowerCase()}/jurnal`);
+}
+
+export async function reverseEntryAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await requireUser();
+  let id: string;
+  try {
+    ({ id } = await reverseEntry(getDb(), actor, {
+      entryId: formString(formData, "entryId"),
+      date: formString(formData, "date"),
+      reason: formString(formData, "reason"),
+    }));
+  } catch (error) {
+    return actionError(error);
+  }
+  redirect(`/${formString(formData, "companyCode").toLowerCase()}/jurnal/${id}`);
 }

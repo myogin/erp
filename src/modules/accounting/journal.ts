@@ -4,11 +4,12 @@ import { z } from "zod";
 import type { Db } from "@/db/client";
 import { user } from "@/db/auth-schema";
 import { formatRupiah, money, type Money } from "@/lib/money";
-import { businessDate } from "@/lib/time";
+import { businessDate, formatIsoDate } from "@/lib/time";
 import { AccessDeniedError, getGrants, writeAuditLog, type Actor } from "@/modules/access";
 import { company } from "@/modules/access/schema";
 import { AccountingRuleError } from "./errors";
 import { canEditChartOfAccounts, formatDocumentNumber, type JournalStatus } from "./rules";
+import { assertPeriodOpen, lockPeriods } from "./periods";
 import { chartAccount, documentSequence, journalEntry, journalLine } from "./schema";
 import { requireEdit, requireView } from "./service";
 
@@ -181,6 +182,8 @@ async function post(tx: Tx, actor: Actor, entryId: string): Promise<{ documentNu
   if (!debit.equals(credit)) {
     throw new AccountingRuleError(`Debit dan kredit belum seimbang: selisih ${formatRupiah(debit.minus(credit).abs())}.`);
   }
+  await lockPeriods(tx, entry.companyId, "shared");
+  await assertPeriodOpen(tx, entry.companyId, entry.date);
 
   const year = Number(entry.date.slice(0, 4));
   const [{ lastNumber }] = await tx
@@ -207,6 +210,72 @@ async function post(tx: Tx, actor: Actor, entryId: string): Promise<{ documentNu
     details: { number: documentNumber, total: debit.toFixed(2) },
   });
   return { documentNumber };
+}
+
+// ---------------------------------------------------------------------------
+// Reversal
+
+const reversalInput = z.object({
+  entryId: z.uuid(),
+  date: z.iso.date("Tanggal tidak valid."),
+  reason: z.string().trim().min(1, "Alasan wajib diisi."),
+});
+
+/**
+ * Corrects a posted entry the only way allowed (ADR-0003): posts a new entry
+ * with every line's debit and credit swapped, linked to the original. Each
+ * entry is reversed at most once, and a Reversal is never reversed.
+ */
+export async function reverseEntry(
+  db: Db,
+  actor: Actor,
+  input: { entryId: string; date: string; reason: string },
+): Promise<{ id: string; documentNumber: string }> {
+  const data = reversalInput.parse(input);
+  return db.transaction(async (tx) => {
+    const original = await lockEntry(tx, data.entryId);
+    await requireEdit(tx, actor, original.companyId);
+    if (original.status !== "posted") throw new AccountingRuleError("Hanya jurnal yang sudah diposting yang bisa dibalik.");
+    if (original.reversesEntryId) {
+      throw new AccountingRuleError("Ini jurnal balik dan tidak bisa dibalik lagi. Buat jurnal baru bila perlu.");
+    }
+    const [already] = await tx
+      .select({ documentNumber: journalEntry.documentNumber })
+      .from(journalEntry)
+      .where(eq(journalEntry.reversesEntryId, original.id));
+    if (already) throw new AccountingRuleError(`Jurnal ini sudah dibalik oleh ${already.documentNumber}.`);
+    if (data.date < original.date) {
+      throw new AccountingRuleError(`Tanggal jurnal balik tidak boleh sebelum tanggal jurnal aslinya (${formatIsoDate(original.date)}).`);
+    }
+    if (data.date > businessDate()) throw new AccountingRuleError("Tanggal jurnal balik tidak boleh di masa depan.");
+
+    const lines = await tx.select().from(journalLine).where(eq(journalLine.entryId, original.id)).orderBy(asc(journalLine.lineNo));
+    const [created] = await tx
+      .insert(journalEntry)
+      .values({
+        companyId: original.companyId,
+        documentType: original.documentType,
+        date: data.date,
+        description: `Jurnal balik ${original.documentNumber}: ${data.reason}`,
+        createdBy: actor.userId,
+        reversesEntryId: original.id,
+      })
+      .returning({ id: journalEntry.id });
+    await tx.insert(journalLine).values(
+      lines.map((l) => ({ entryId: created.id, lineNo: l.lineNo, accountId: l.accountId, debit: l.credit, credit: l.debit, description: l.description })),
+    );
+    const { documentNumber } = await post(tx, actor, created.id);
+
+    await writeAuditLog(tx, {
+      actorUserId: actor.userId,
+      action: "journal.reverse",
+      companyId: original.companyId,
+      targetType: "journal_entry",
+      targetId: original.id,
+      details: { number: original.documentNumber, reversal: documentNumber, reason: data.reason },
+    });
+    return { id: created.id, documentNumber };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -285,7 +354,20 @@ export async function getJournalEntry(db: Executor, actor: Actor, entryId: strin
     .innerJoin(chartAccount, eq(chartAccount.id, journalLine.accountId))
     .where(eq(journalLine.entryId, entryId))
     .orderBy(asc(journalLine.lineNo));
-  return { ...entry, lines };
+  const reversal = alias(journalEntry, "reversal");
+  const [link] = await db
+    .select({ reverses: journalEntry.documentNumber, reversedById: reversal.id, reversedBy: reversal.documentNumber })
+    .from(journalEntry)
+    .leftJoin(reversal, eq(reversal.reversesEntryId, journalEntry.id))
+    .where(eq(journalEntry.id, entry.reversesEntryId ?? entry.id));
+  return {
+    ...entry,
+    lines,
+    /** The entry this Reversal cancels. */
+    reverses: entry.reversesEntryId ? { id: entry.reversesEntryId, documentNumber: link.reverses! } : null,
+    /** The Reversal that cancels this entry. */
+    reversedBy: !entry.reversesEntryId && link.reversedById ? { id: link.reversedById, documentNumber: link.reversedBy! } : null,
+  };
 }
 
 export type JournalEntryDetail = Awaited<ReturnType<typeof getJournalEntry>>;

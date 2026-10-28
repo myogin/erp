@@ -16,6 +16,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "account.activate": "Akun diaktifkan",
   "journal.post": "Jurnal diposting",
   "journal.delete_draft": "Draf jurnal dihapus",
+  "journal.reverse": "Jurnal dibalik",
+  "period.close": "Tutup buku",
+  "period.reopen": "Periode dibuka kembali",
 };
 
 export function auditActionLabel(action: string): string {
@@ -40,6 +43,9 @@ const DETAIL_LABELS: Record<string, string> = {
   number: "Nomor",
   total: "Total",
   description: "Keterangan",
+  reversal: "Jurnal balik",
+  period: "Periode",
+  reason: "Alasan",
 };
 
 /** An entry's details as readable text, e.g. "Kode: CVA · Nama: CV Alpha". */

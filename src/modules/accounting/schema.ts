@@ -62,6 +62,10 @@ export const journalEntry = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     postedBy: text("posted_by").references(() => user.id, { onDelete: "set null" }),
     postedAt: timestamp("posted_at", { withTimezone: true }),
+    // Set on a Reversal: the posted entry it cancels. Unique, so an entry is reversed at most once.
+    reversesEntryId: uuid("reverses_entry_id")
+      .unique("journal_entry_reversed_once")
+      .references((): AnyPgColumn => journalEntry.id),
   },
   (t) => [
     unique("journal_entry_sequence").on(t.companyId, t.documentType, t.year, t.sequence),
@@ -107,4 +111,22 @@ export const documentSequence = pgTable(
     lastNumber: integer("last_number").notNull(),
   },
   (t) => [primaryKey({ columns: [t.companyId, t.documentType, t.year] })],
+);
+
+// A closed Accounting Period: no Posting may be dated inside `period` (the
+// month's first day). A trigger in the migration enforces it. Reopening deletes the row.
+export const periodClose = pgTable(
+  "period_close",
+  {
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => company.id),
+    period: date("period", { mode: "string" }).notNull(),
+    closedBy: text("closed_by").references(() => user.id, { onDelete: "set null" }),
+    closedAt: timestamp("closed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.companyId, t.period] }),
+    check("period_close_first_of_month", sql`extract(day from ${t.period}) = 1`),
+  ],
 );

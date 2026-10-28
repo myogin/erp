@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessDate, businessMonth, formatDate, formatDateTime, formatIsoDate, witaWallClockAsUtc } from "./time";
+import { businessDate, businessMonth, formatDate, formatDateTime, formatIsoDate, formatMonth, nextMonth, witaWallClockAsUtc } from "./time";
 
 describe("business time", () => {
   // 16:30 UTC on 31 Dec is already 00:30 on 1 Jan in WITA (UTC+8).
@@ -24,5 +24,13 @@ describe("business time", () => {
 
   it("shows a business date string as dd/MM/yyyy", () => {
     expect(formatIsoDate("2027-01-31")).toBe("31/01/2027");
+  });
+});
+
+describe("months", () => {
+  it("names a month in Indonesian and steps across the year end", () => {
+    expect(formatMonth("2026-10")).toBe("Oktober 2026");
+    expect(nextMonth("2026-12")).toBe("2027-01");
+    expect(nextMonth("2026-09")).toBe("2026-10");
   });
 });

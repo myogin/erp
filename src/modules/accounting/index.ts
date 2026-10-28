@@ -7,6 +7,7 @@ export {
   getJournalEntry,
   listJournalEntries,
   postEntry,
+  reverseEntry,
   saveAndPost,
   saveDraft,
   sumAmounts,
@@ -15,6 +16,7 @@ export {
   type JournalLineInput,
   type JournalListQuery,
 } from "./journal";
+export { closePeriod, listPeriods, reopenPeriod, type PeriodRow } from "./periods";
 export * from "./rules";
 export {
   createSubAccount,
