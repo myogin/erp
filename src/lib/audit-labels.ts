@@ -14,6 +14,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "account.rename": "Nama akun diganti",
   "account.deactivate": "Akun dinonaktifkan",
   "account.activate": "Akun diaktifkan",
+  "journal.post": "Jurnal diposting",
+  "journal.delete_draft": "Draf jurnal dihapus",
 };
 
 export function auditActionLabel(action: string): string {
@@ -29,7 +31,16 @@ export function actionsMatchingLabel(search: string | undefined): string[] {
     .map(([action]) => action);
 }
 
-const DETAIL_LABELS: Record<string, string> = { code: "Kode", name: "Nama", previousName: "Nama lama", email: "Email", role: "Peran" };
+const DETAIL_LABELS: Record<string, string> = {
+  code: "Kode",
+  name: "Nama",
+  previousName: "Nama lama",
+  email: "Email",
+  role: "Peran",
+  number: "Nomor",
+  total: "Total",
+  description: "Keterangan",
+};
 
 /** An entry's details as readable text, e.g. "Kode: CVA · Nama: CV Alpha". */
 export function formatAuditDetails(details: Record<string, unknown> | null): string {

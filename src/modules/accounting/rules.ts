@@ -24,6 +24,19 @@ export type AccountType = keyof typeof ACCOUNT_TYPES;
 
 export const ACCOUNT_TYPE_KEYS = Object.keys(ACCOUNT_TYPES) as [AccountType, ...AccountType[]];
 
+/** Document Types, each with its own Document Number sequence. Payroll (#13) adds its own. */
+export const DOCUMENT_TYPES = ["JV"] as const;
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
+export const JOURNAL_STATUSES = ["draft", "posted"] as const;
+export type JournalStatus = (typeof JOURNAL_STATUSES)[number];
+export const JOURNAL_STATUS_LABELS: Record<JournalStatus, string> = { draft: "Draf", posted: "Diposting" };
+
+/** e.g. JV/MERUBALI/2026/00001 (format to be confirmed by Finance, #22). */
+export function formatDocumentNumber(type: DocumentType, companyCode: string, year: number, sequence: number): string {
+  return `${type}/${companyCode}/${year}/${String(sequence).padStart(5, "0")}`;
+}
+
 /** Sub-account codes are the parent code plus two digits in this range; 01-49 belong to the template. */
 export const SUB_ACCOUNT_FIRST = 50;
 export const SUB_ACCOUNT_LAST = 99;

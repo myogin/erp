@@ -1,10 +1,11 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db/client";
+import { money, type Money } from "@/lib/money";
 import { AccessDeniedError, getGrants, writeAuditLog, type Actor } from "@/modules/access";
 import { AccountingRuleError } from "./errors";
 import { canEditChartOfAccounts, canViewChartOfAccounts, subAccountCodeProblem } from "./rules";
-import { chartAccount } from "./schema";
+import { chartAccount, journalEntry, journalLine } from "./schema";
 
 export type Account = typeof chartAccount.$inferSelect;
 /** An Account with its depth in the tree (0 for the top-level Header Accounts). */
@@ -13,11 +14,11 @@ export type ChartRow = Account & { depth: number };
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type Executor = Db | Tx;
 
-async function requireView(db: Executor, actor: Actor, companyId: string): Promise<void> {
+export async function requireView(db: Executor, actor: Actor, companyId: string): Promise<void> {
   if (!canViewChartOfAccounts(await getGrants(db, actor.userId), companyId)) throw new AccessDeniedError();
 }
 
-async function requireEdit(db: Executor, actor: Actor, companyId: string): Promise<void> {
+export async function requireEdit(db: Executor, actor: Actor, companyId: string): Promise<void> {
   if (!canEditChartOfAccounts(await getGrants(db, actor.userId), companyId)) throw new AccessDeniedError();
 }
 
@@ -55,7 +56,10 @@ export async function createSubAccount(
     if (!parent.isActive) throw new AccountingRuleError("Akun induk nonaktif. Aktifkan dulu sebelum menambah sub-akun.");
     const problem = subAccountCodeProblem(parent.code, data.code);
     if (problem) throw new AccountingRuleError(problem);
-    // #6 must refuse a parent that already has Postings, since a Header Account can't hold any.
+    // A Header Account can't hold Postings, so one that already has some can't become one.
+    if (await hasPostings(tx, parent.id)) {
+      throw new AccountingRuleError("Akun ini sudah dipakai di jurnal yang diposting, jadi tidak bisa diberi sub-akun.");
+    }
 
     const [created] = await tx
       .insert(chartAccount)
@@ -75,6 +79,26 @@ export async function createSubAccount(
     });
     return created;
   });
+}
+
+async function hasPostings(tx: Executor, accountId: string): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: journalLine.id })
+    .from(journalLine)
+    .innerJoin(journalEntry, eq(journalEntry.id, journalLine.entryId))
+    .where(and(eq(journalLine.accountId, accountId), eq(journalEntry.status, "posted")))
+    .limit(1);
+  return !!row;
+}
+
+/** Posted debits minus credits on the Account. */
+async function postedBalance(tx: Executor, accountId: string): Promise<Money> {
+  const [row] = await tx
+    .select({ balance: sql<string>`coalesce(sum(${journalLine.debit} - ${journalLine.credit}), 0)` })
+    .from(journalLine)
+    .innerJoin(journalEntry, eq(journalEntry.id, journalLine.entryId))
+    .where(and(eq(journalLine.accountId, accountId), eq(journalEntry.status, "posted")));
+  return money(row.balance);
 }
 
 /** The Sub-account to change, locked; template Accounts change only through the template. */
@@ -119,7 +143,9 @@ export async function setAccountActive(db: Db, actor: Actor, input: { accountId:
         .where(and(eq(chartAccount.parentId, account.id), eq(chartAccount.isActive, true)))
         .limit(1);
       if (activeChild) throw new AccountingRuleError("Nonaktifkan dulu sub-akun di bawahnya.");
-      // #6 must also refuse while the Account has a balance.
+      if (!(await postedBalance(tx, account.id)).isZero()) {
+        throw new AccountingRuleError("Akun masih punya saldo, jadi belum bisa dinonaktifkan.");
+      }
     }
 
     await tx.update(chartAccount).set({ isActive: input.active }).where(eq(chartAccount.id, account.id));
