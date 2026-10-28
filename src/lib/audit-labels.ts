@@ -10,6 +10,10 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "user.two_factor_enabled": "2FA diaktifkan",
   "role.grant": "Peran diberikan",
   "role.revoke": "Peran dicabut",
+  "account.create": "Sub-akun dibuat",
+  "account.rename": "Nama akun diganti",
+  "account.deactivate": "Akun dinonaktifkan",
+  "account.activate": "Akun diaktifkan",
 };
 
 export function auditActionLabel(action: string): string {
@@ -25,7 +29,7 @@ export function actionsMatchingLabel(search: string | undefined): string[] {
     .map(([action]) => action);
 }
 
-const DETAIL_LABELS: Record<string, string> = { code: "Kode", name: "Nama", email: "Email", role: "Peran" };
+const DETAIL_LABELS: Record<string, string> = { code: "Kode", name: "Nama", previousName: "Nama lama", email: "Email", role: "Peran" };
 
 /** An entry's details as readable text, e.g. "Kode: CVA · Nama: CV Alpha". */
 export function formatAuditDetails(details: Record<string, unknown> | null): string {

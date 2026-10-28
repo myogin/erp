@@ -3,7 +3,7 @@ import path from "node:path";
 import ExcelJS from "exceljs";
 import type { AccurateAccount } from "../accounts";
 import { DRAFTS } from "./mappings";
-import { ACCOUNT_TYPES, TEMPLATE, type AccountType, type DraftAccount } from "./template";
+import { ACCOUNT_TYPES, TEMPLATE, type AccountType, type TemplateAccount } from "@/modules/accounting";
 
 // `npm run accurate:coa-draft`: builds the Finance review workbook (issue #22)
 // from the proposed template, the mappings and the export of
@@ -45,7 +45,7 @@ function validateTemplate() {
 }
 
 /** The Company's full chart: template plus its Sub-accounts, which turn their parent into a header. */
-function companyChart(code: string): Map<string, DraftAccount> {
+function companyChart(code: string): Map<string, TemplateAccount> {
   const chart = new Map(TEMPLATE.map((a) => [a.code, { ...a }]));
   for (const [subCode, name] of DRAFTS[code].subAccounts) {
     const parent = chart.get(parentCode(subCode));

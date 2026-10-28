@@ -7,6 +7,9 @@ import { account, session, user } from "@/db/auth-schema";
 import { AccessDeniedError, AccessRuleError } from "./errors";
 import { COMPANY_ROLES, GLOBAL_ROLES, isGlobalRole, isOwnerManagedRole, ROLES, TWO_FACTOR_ROLES, type Grant, type Role } from "./roles";
 import { MIN_PASSWORD_LENGTH, RESERVED_COMPANY_CODES } from "./rules";
+// Not the accounting index: that would import this module back (ADR-0005 still holds,
+// createChartOfAccounts is the accounting entry point for a new Company).
+import { createChartOfAccounts } from "../accounting/chart";
 import { auditLog, company, roleGrant } from "./schema";
 
 /** The User performing an action, as resolved by the caller (UI, API or agent). */
@@ -95,7 +98,8 @@ type AuditEntry = {
   details?: Record<string, unknown>;
 };
 
-async function audit(db: Executor, entry: AuditEntry): Promise<void> {
+/** Appends to the Audit Log; other modules record their sensitive actions through this. */
+export async function audit(db: Executor, entry: AuditEntry): Promise<void> {
   await db.insert(auditLog).values(entry);
 }
 
@@ -389,6 +393,7 @@ export async function createCompany(
     if (existing.length > 0) throw new AccessRuleError(`Kode ${data.code} sudah dipakai.`);
 
     const [created] = await tx.insert(company).values({ code: data.code, name: data.name, npwp: data.npwp ?? null }).returning();
+    await createChartOfAccounts(tx, created.id);
     await audit(tx, {
       actorUserId: actor.userId,
       action: "company.create",

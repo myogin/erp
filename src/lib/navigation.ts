@@ -35,11 +35,12 @@ export function navigation(grants: Grant[], company: { id: string; code: string 
   const base = company ? `/${company.code.toLowerCase()}` : null;
   const groups: NavGroup[] = [{ title: "", items: [{ title: "Beranda", href: base ?? "/", icon: HomeIcon }] }];
 
-  if (base && has("owner", "admin", "finance", "management")) {
+  // The books: not Admin, who manages Users and Companies (issue #5).
+  if (base && has("owner", "finance", "management")) {
     groups.push({
       title: "Akuntansi",
       items: [
-        { title: "Bagan Akun", href: `${base}/akun`, icon: BookOpenIcon, soon: true },
+        { title: "Bagan Akun", href: `${base}/akun`, icon: BookOpenIcon },
         { title: "Jurnal", href: `${base}/jurnal`, icon: NotebookPenIcon, soon: true },
         { title: "Neraca Saldo", href: `${base}/neraca-saldo`, icon: ScaleIcon, soon: true },
         { title: "Tutup Buku", href: `${base}/tutup-buku`, icon: LockIcon, soon: true },

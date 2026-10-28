@@ -47,6 +47,10 @@ The standard set of account codes that every Company's Chart of Accounts is crea
 A single line in a Chart of Accounts that balances are tracked against.
 _Avoid_: Ledger, GL code
 
+**Account Type** [Jenis Akun]:
+The fixed classification of an Account, such as Cash & Bank, Receivable, Inventory, Expense or Other Income. It sets the Account's normal balance and where it appears in the balance sheet or income statement.
+_Avoid_: Category, class, group
+
 **Header Account** [Akun Induk]:
 An Account that only groups the Accounts beneath it. It never receives a Posting; its balance is the sum of its children.
 _Avoid_: Parent account, group account

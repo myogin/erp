@@ -8,6 +8,13 @@
       "when": 1793028146611,
       "tag": "0000_access",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793156620739,
+      "tag": "0001_chart_of_accounts",
+      "breakpoints": true
     }
   ]
 }
