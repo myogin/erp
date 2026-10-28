@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Python bytecode (e.g. from the ui-ux-pro-max skill scripts)
 __pycache__/
+
+# Data exported from Legacy Systems (e.g. npm run accurate:export-coa)
+/exports/
