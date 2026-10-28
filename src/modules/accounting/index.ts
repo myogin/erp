@@ -2,6 +2,19 @@
 // tools call these functions; they must not reach into the tables directly (ADR-0005).
 export { syncChartTemplate } from "./chart";
 export * from "./errors";
+export {
+  deleteDraft,
+  getJournalEntry,
+  listJournalEntries,
+  postEntry,
+  saveAndPost,
+  saveDraft,
+  sumAmounts,
+  type DraftInput,
+  type JournalEntryDetail,
+  type JournalLineInput,
+  type JournalListQuery,
+} from "./journal";
 export * from "./rules";
 export {
   createSubAccount,

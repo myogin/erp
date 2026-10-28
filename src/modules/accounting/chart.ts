@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
 import { company } from "../access/schema";
-import { chartAccount } from "./schema";
+import { chartAccount, journalLine } from "./schema";
 import { TEMPLATE, type TemplateAccount } from "./template";
 
 // Creating and syncing Charts of Accounts from the COA Template. No permission
@@ -17,7 +17,7 @@ function parentCodeOf(code: string): string | null {
 /**
  * Brings one Company's template Accounts in line with `template`: adds missing
  * ones, updates changed names, types and parents, and deletes Accounts that
- * left the template unless something still sits beneath them. Sub-accounts are
+ * left the template unless a Sub-account or a Journal Line still uses them. Sub-accounts are
  * left alone apart from following their parent's type.
  */
 export async function syncCompanyChart(tx: Executor, companyId: string, template: TemplateAccount[] = TEMPLATE) {
@@ -53,10 +53,10 @@ export async function syncCompanyChart(tx: Executor, companyId: string, template
   // Deepest first, so a removed child goes before its removed parent is checked.
   const removed = existing.filter((a) => a.fromTemplate && !templateCodes.has(a.code)).sort((a, b) => b.code.length - a.code.length);
   for (const account of removed) {
-    // #6 must also keep an Account that Journal Entries use.
-    await tx.execute(
-      sql`delete from ${chartAccount} where id = ${account.id} and not exists (select 1 from ${chartAccount} c where c.parent_id = ${account.id})`,
-    );
+    await tx.execute(sql`
+      delete from ${chartAccount} where id = ${account.id}
+        and not exists (select 1 from ${chartAccount} c where c.parent_id = ${account.id})
+        and not exists (select 1 from ${journalLine} l where l.account_id = ${account.id})`);
   }
 
   const headers = template.filter((a) => a.header).map((a) => a.code);

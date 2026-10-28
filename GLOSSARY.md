@@ -60,8 +60,16 @@ An Account a Company adds beneath a COA Template Account for detail only it need
 _Avoid_: Child account, custom account
 
 **Journal Entry** [Jurnal]:
-A dated set of debit and credit lines whose totals are equal. Every financial effect in the system ends up as a Journal Entry.
+A dated set of Journal Lines whose debit and credit totals are equal. Every financial effect in the system ends up as a Journal Entry. It starts as a Draft and becomes final through Posting.
 _Avoid_: Transaction, voucher
+
+**Journal Line** [Baris Jurnal]:
+One line of a Journal Entry: an Account and either a debit or a credit amount.
+_Avoid_: Entry line, split
+
+**Draft** [Draf]:
+A Journal Entry not yet posted. It has no Document Number and can still be changed or deleted.
+_Avoid_: Pending, unposted
 
 **Posting** [Posting]:
 Making a Journal Entry final. A posted Journal Entry can never be edited or deleted.
@@ -79,8 +87,12 @@ Locking an Accounting Period so nothing more can be posted with a date inside it
 _Avoid_: Freeze, finalise
 
 **Document Number** [Nomor Dokumen]:
-A gap-free sequential identifier per Company, document type and year, e.g. `INV/CVA/2027/0001`.
+A gap-free sequential identifier per Company, Document Type and year, given at Posting, e.g. `JV/MERUBALI/2026/00001`. The year is that of the document's date.
 _Avoid_: Reference, ID
+
+**Document Type** [Jenis Dokumen]:
+A kind of document with its own Document Number prefix and sequence, such as `JV` for a manual Journal Entry.
+_Avoid_: Journal type, voucher type
 
 **Opening Balance** [Saldo Awal]:
 The balance of an Account, receivable or payable brought over from a Legacy System at Cutover.
